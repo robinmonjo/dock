@@ -50,8 +50,7 @@ func start(c *cli.Context) (int, error) {
 	if err := process.start(); err != nil {
 		return -1, err
 	}
-
-	runPsef()
+	log.Infof("process pid: %d", process.pid())
 
 	return signalsListener.forward(process), nil
 }

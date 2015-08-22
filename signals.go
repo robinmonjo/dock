@@ -4,11 +4,17 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/robinmonjo/dock/system"
 )
 
-const signalBufferSize = 2048
+const (
+	signalBufferSize       = 2048
+	childrenSigtermTimeout = 2  //seconds
+	childrenKillTimeout    = 10 //seconds
+)
 
 type signalsListener struct {
 	signals chan os.Signal
@@ -26,13 +32,23 @@ func newSignalsListener() *signalsListener {
 func (l *signalsListener) forward(p *process) int {
 
 	cpid := p.pid()
+	procStatus, err := system.NewProcStatus(cpid)
+	if err != nil {
+		log.Error(err)
+	}
 
 	for s := range l.signals {
 		log.Info(s)
 		switch s {
 		case syscall.SIGCHLD:
-			//child exiteld, sending a sigterm to all pses and collecting waits TODO: kill timeout
-			syscall.Kill(-1, syscall.SIGTERM)
+			//child exited, sending a sigterm to all pses and collecting waits TODO: kill timeout
+			if os.Getpid() == 1 { //if i'am the init process (supposed to be but I crashed my mac twice :) )
+				go func() {
+					<-time.After(childrenSigtermTimeout * time.Second)
+					syscall.Kill(-1, syscall.SIGTERM)
+				}()
+			}
+
 			exits, err := l.reap()
 			if err != nil {
 				log.Error(err)
@@ -44,6 +60,9 @@ func (l *signalsListener) forward(p *process) int {
 				}
 			}
 		default:
+			log.Infof("signal is blocked %v", procStatus.SignalBlocked(s.(syscall.Signal)))
+			log.Infof("signal is inored %v", procStatus.SignalIgnored(s.(syscall.Signal)))
+			log.Infof("signal is caught %v", procStatus.SignalCaught(s.(syscall.Signal)))
 			if err := p.signal(s); err != nil {
 				log.Error(err)
 			}
@@ -67,7 +86,6 @@ func (l *signalsListener) reap() ([]exit, error) {
 		rus   syscall.Rusage
 	)
 	for {
-		runPsef()
 		pid, err := syscall.Wait4(-1, &ws, 0, &rus)
 		log.Infof("wait 4 on PID: %d", pid)
 		if err != nil {
@@ -83,6 +101,5 @@ func (l *signalsListener) reap() ([]exit, error) {
 			pid:    pid,
 			status: exitStatus(ws),
 		})
-		runPsef()
 	}
 }

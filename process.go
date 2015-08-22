@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"syscall"
+	//"syscall"
 )
 
 type process struct {
@@ -34,9 +34,10 @@ func (p *process) start() error {
 	p.cmd = exec.Command(path, args...)
 	p.cmd.Stdin = p.stdin
 	p.cmd.Stdout = p.stdout
-	p.cmd.SysProcAttr = &syscall.SysProcAttr{
-		Pdeathsig: syscall.SIGTERM,
-	}
+	//	p.cmd.SysProcAttr = &syscall.SysProcAttr{
+	//		Pdeathsig: syscall.SIGTERM,
+	//	}
+	// p.cmd.SysProcAttr = &syscall.SysProcAttr{Setctty: true, Setsid: true}
 
 	return p.cmd.Start()
 }
