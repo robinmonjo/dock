@@ -37,19 +37,21 @@ func main() {
 }
 
 func start(c *cli.Context) (int, error) {
+	log.Infof("dock pid: %d", os.Getpid())
+
 	process := &process{
-		args:   c.Args(),
+		argv:   c.Args(),
 		stdin:  os.Stdin,
 		stdout: os.Stdout,
 	}
 
-	signalsHandler := newSignalsHandler(process)
+	signalsListener := newSignalsListener()
 
 	if err := process.start(); err != nil {
-		return 1, err
+		return -1, err
 	}
 
-	go signalsHandler.forward()
+	runPsef()
 
-	return process.wait()
+	return signalsListener.forward(process), nil
 }

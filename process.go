@@ -8,44 +8,41 @@ import (
 	"syscall"
 )
 
-const (
-	exitSignalOffset = 128
-)
-
 type process struct {
-	args   []string
+	argv   []string //args[0] mus be the path
 	cmd    *exec.Cmd
 	stdin  io.Reader
 	stdout io.Writer
 }
 
 func (p *process) start() error {
-	n := len(p.args)
+	n := len(p.argv)
 	if n == 0 {
-		return fmt.Errorf("args can't be empty")
+		return fmt.Errorf("argv can't be empty")
 	}
 
-	arg1 := p.args[0]
+	path, err := exec.LookPath(p.argv[0])
+	if err != nil {
+		return err
+	}
+
 	var args []string
 	if n > 1 {
-		args = p.args[1:n]
+		args = p.argv[1:n]
 	}
 
-	cmd := exec.Command(arg1, args...)
-	cmd.Stdin = p.stdin
-	cmd.Stdout = p.stdout
-	p.cmd = cmd
-	return cmd.Start()
+	p.cmd = exec.Command(path, args...)
+	p.cmd.Stdin = p.stdin
+	p.cmd.Stdout = p.stdout
+	p.cmd.SysProcAttr = &syscall.SysProcAttr{
+		Pdeathsig: syscall.SIGTERM,
+	}
+
+	return p.cmd.Start()
 }
 
-func (p *process) wait() (int, error) {
-	err := p.cmd.Wait()
-	status := p.cmd.ProcessState.Sys().(syscall.WaitStatus)
-	exitCode := status.ExitStatus()
-	if status.Signaled() {
-		exitCode += exitSignalOffset
-	}
-	return exitCode, err
+func (p *process) wait() error {
+	return p.cmd.Wait()
 }
 
 func (p *process) pid() int {
