@@ -8,12 +8,16 @@ function launch_nc {
   nc -l 3000
 }
 
+function launch_nc2 {
+  echo "spawning2"
+  nc -l 3001
+}
+
 function prepare_nc {
   #spawn an other child process
   launch_nc &
-  wait
+  launch_nc2 &
 }
 
 #spawn a child process
 prepare_nc &
-wait
