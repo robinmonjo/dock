@@ -16,6 +16,7 @@ type process struct {
 	cmd       *exec.Cmd
 	stdin     io.Reader
 	stdout    io.Writer
+	stderr    io.Writer
 	pty       *os.File
 	termState *termState
 }
@@ -52,6 +53,7 @@ func (p *process) start() error {
 
 	p.cmd.Stdin = p.stdin
 	p.cmd.Stdout = p.stdout
+	p.cmd.Stderr = p.stderr
 
 	//	p.cmd.SysProcAttr = &syscall.SysProcAttr{
 	//		Pdeathsig: syscall.SIGTERM,
@@ -84,6 +86,7 @@ func (p *process) startInteractive() error {
 	}
 	p.resizePty()
 	go io.Copy(p.stdout, f)
+	go io.Copy(p.stderr, f)
 	go io.Copy(f, p.stdin)
 	return nil
 }

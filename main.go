@@ -51,6 +51,7 @@ func start(c *cli.Context) (int, error) {
 		argv:   c.Args(),
 		stdin:  os.Stdin,
 		stdout: os.Stdout,
+		stderr: os.Stderr,
 	}
 	defer process.cleanup()
 
