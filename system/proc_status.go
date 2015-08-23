@@ -69,6 +69,16 @@ func (ps *ProcStatus) SignalCaught(sig syscall.Signal) bool {
 	return exists(sig, ps.SigCgt)
 }
 
+func (ps *ProcStatus) SignalAsEffect(sig syscall.Signal) bool {
+	if exists(sig, ps.SigCgt) {
+		return true
+	}
+	if exists(sig, ps.SigIgn) || exists(sig, ps.SigBlk) {
+		return false
+	}
+	return true
+}
+
 //naive implementation of signal mask decoding
 //ref: http://jeff66ruan.github.io/blog/2014/03/31/sigpnd-sigblk-sigign-sigcgt-in-proc-status-file/
 func decodeMask(maskStr string) ([]syscall.Signal, error) {

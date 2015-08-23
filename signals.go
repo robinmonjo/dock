@@ -7,13 +7,13 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	//"github.com/robinmonjo/dock/system"
+	"github.com/robinmonjo/dock/system"
 )
 
 const (
 	signalBufferSize    = 2048
-	childrenTermTimeout = 2  //seconds
-	childrenKillTimeout = 10 //seconds
+	childrenTermTimeout = 2 //seconds
+	childrenKillTimeout = 5 //seconds
 )
 
 type signalsListener struct {
@@ -32,16 +32,14 @@ func newSignalsListener() *signalsListener {
 func (l *signalsListener) forward(p *process) int {
 
 	cpid := p.pid()
-	//procStatus, err := system.NewProcStatus(cpid)
-	//if err != nil {
-	//	log.Error(err)
-	//}
 
 	for s := range l.signals {
 		log.Debug(s)
+
 		switch s {
 		case syscall.SIGCHLD:
 			done := make(chan bool, 1)
+
 			if os.Getpid() == 1 { //if i'am the init process (supposed to be but I crashed my mac twice :) )
 				go func() {
 					timeouts := []time.Duration{childrenTermTimeout, childrenKillTimeout}
@@ -68,10 +66,27 @@ func (l *signalsListener) forward(p *process) int {
 					return e.status
 				}
 			}
+
+		case syscall.SIGINT:
+			fallthrough
+		case syscall.SIGTERM:
+			ps, err := system.NewProcStatus(cpid)
+			if err != nil {
+				log.Error(err)
+			}
+
+			if !ps.SignalAsEffect(s.(syscall.Signal)) {
+				//you won't ignore or block my interupts, I'm your boss
+				if err := p.signal(syscall.SIGKILL); err != nil {
+					log.Error(err)
+				}
+			} else {
+				if err := p.signal(s); err != nil {
+					log.Error(err)
+				}
+			}
+
 		default:
-			//	log.Infof("signal is blocked %v", procStatus.SignalBlocked(s.(syscall.Signal)))
-			//	log.Infof("signal is inored %v", procStatus.SignalIgnored(s.(syscall.Signal)))
-			//	log.Infof("signal is caught %v", procStatus.SignalCaught(s.(syscall.Signal)))
 			if err := p.signal(s); err != nil {
 				log.Error(err)
 			}
