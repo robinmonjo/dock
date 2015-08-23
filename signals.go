@@ -38,7 +38,7 @@ func (l *signalsListener) forward(p *process) int {
 	//}
 
 	for s := range l.signals {
-		log.Info(s)
+		log.Debug(s)
 		switch s {
 		case syscall.SIGCHLD:
 			//child exited, sending a sigterm to all pses and collecting waits TODO: kill timeout
@@ -87,7 +87,6 @@ func (l *signalsListener) reap() ([]exit, error) {
 	)
 	for {
 		pid, err := syscall.Wait4(-1, &ws, 0, &rus)
-		log.Infof("wait 4 on PID: %d", pid)
 		if err != nil {
 			if err == syscall.ECHILD || err == syscall.ESRCH {
 				return exits, nil

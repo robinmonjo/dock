@@ -26,11 +26,16 @@ func main() {
 	}
 
 	app.Action = func(c *cli.Context) {
+
+		if c.Bool("debug") {
+			log.SetLevel(log.DebugLevel)
+		}
+
 		exit, err := start(c)
 		if err != nil {
 			log.Error(err)
 		}
-		log.Infof("exit status: %d", exit)
+		log.Debugf("exit status: %d", exit)
 		os.Exit(exit)
 	}
 
@@ -40,7 +45,7 @@ func main() {
 }
 
 func start(c *cli.Context) (int, error) {
-	log.Infof("dock pid: %d", os.Getpid())
+	log.Debugf("dock pid: %d", os.Getpid())
 
 	process := &process{
 		argv:   c.Args(),
@@ -63,7 +68,7 @@ func start(c *cli.Context) (int, error) {
 		return -1, err
 	}
 
-	log.Infof("process pid: %d", process.pid())
+	log.Debugf("process pid: %d", process.pid())
 
 	exit := signalsListener.forward(process)
 
