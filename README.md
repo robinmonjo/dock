@@ -8,3 +8,8 @@
 - stdin / stdout redirection
 - log rotate
 - blablabla
+
+--> demain
+- organiser le code autour du pty (file avec restore state etc ...)
+- commencer les tests d'intégration
+- assert method to make sure there is not PS left when dock exits

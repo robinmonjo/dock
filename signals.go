@@ -7,7 +7,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/robinmonjo/dock/system"
+	//"github.com/robinmonjo/dock/system"
 )
 
 const (
@@ -32,10 +32,10 @@ func newSignalsListener() *signalsListener {
 func (l *signalsListener) forward(p *process) int {
 
 	cpid := p.pid()
-	procStatus, err := system.NewProcStatus(cpid)
-	if err != nil {
-		log.Error(err)
-	}
+	//procStatus, err := system.NewProcStatus(cpid)
+	//if err != nil {
+	//	log.Error(err)
+	//}
 
 	for s := range l.signals {
 		log.Info(s)
@@ -60,9 +60,9 @@ func (l *signalsListener) forward(p *process) int {
 				}
 			}
 		default:
-			log.Infof("signal is blocked %v", procStatus.SignalBlocked(s.(syscall.Signal)))
-			log.Infof("signal is inored %v", procStatus.SignalIgnored(s.(syscall.Signal)))
-			log.Infof("signal is caught %v", procStatus.SignalCaught(s.(syscall.Signal)))
+			//	log.Infof("signal is blocked %v", procStatus.SignalBlocked(s.(syscall.Signal)))
+			//	log.Infof("signal is inored %v", procStatus.SignalIgnored(s.(syscall.Signal)))
+			//	log.Infof("signal is caught %v", procStatus.SignalCaught(s.(syscall.Signal)))
 			if err := p.signal(s); err != nil {
 				log.Error(err)
 			}

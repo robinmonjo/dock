@@ -20,7 +20,9 @@ func main() {
 	app.Email = "robinmonjo@gmail.com"
 	app.Usage = "micro init system for containers"
 
-	app.Flags = []cli.Flag{}
+	app.Flags = []cli.Flag{
+		cli.BoolFlag{Name: "interactive, i", Usage: "run the process in a pty"},
+	}
 
 	app.Action = func(c *cli.Context) {
 		exit, err := start(c)
@@ -44,13 +46,27 @@ func start(c *cli.Context) (int, error) {
 		stdin:  os.Stdin,
 		stdout: os.Stdout,
 	}
+	defer process.cleanup()
 
 	signalsListener := newSignalsListener()
 
-	if err := process.start(); err != nil {
+	var err error
+
+	if c.Bool("interactive") {
+		err = process.startInteractive()
+	} else {
+		err = process.start()
+	}
+
+	if err != nil {
 		return -1, err
 	}
+
 	log.Infof("process pid: %d", process.pid())
 
 	return signalsListener.forward(process), nil
+}
+
+func psCount() int {
+	return 0
 }

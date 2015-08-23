@@ -19,4 +19,4 @@ clean:
 vendor:
 	mkdir -p ./vendor/src/github.com/robinmonjo
 	ln -s $(CWD) ./vendor/src/github.com/robinmonjo/
-	sh vendor.sh
+	GOPATH=$(GOPATH) sh vendor.sh
