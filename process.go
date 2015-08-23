@@ -22,7 +22,7 @@ type process struct {
 
 type termState struct {
 	state *term.State
-	fd    uintptr //file descriptor on which the state is linked
+	fd    uintptr //file descriptor associated with the state
 }
 
 func (p *process) beforeStart() error {

@@ -22,6 +22,7 @@ func main() {
 
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{Name: "interactive, i", Usage: "run the process in a pty"},
+		cli.BoolFlag{Name: "debug, d", Usage: "run in debug mode"},
 	}
 
 	app.Action = func(c *cli.Context) {
@@ -64,9 +65,19 @@ func start(c *cli.Context) (int, error) {
 
 	log.Infof("process pid: %d", process.pid())
 
-	return signalsListener.forward(process), nil
-}
+	exit := signalsListener.forward(process)
 
-func psCount() int {
-	return 0
+	if c.Bool("debug") {
+		//assert, at this point only 1 process should be running, self
+		i, err := countRunningPses()
+		if err != nil {
+			log.Error(err)
+		} else {
+			if i != 1 {
+				exit = 999
+			}
+		}
+	}
+
+	return exit, nil
 }

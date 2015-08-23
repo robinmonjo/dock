@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"strconv"
 	"syscall"
 )
 
@@ -21,4 +24,23 @@ func exitStatus(status syscall.WaitStatus) int {
 func runPsef() {
 	out, _ := exec.Command("/bin/ps", "-ef").Output()
 	fmt.Printf("%s\n", out)
+}
+
+// count the number of process currently running
+func countRunningPses() (int, error) {
+	cpt := 0
+	err := filepath.Walk("/proc", func(path string, fi os.FileInfo, err error) error {
+		if path == "/proc" {
+			return nil
+		}
+
+		if filepath.Dir(path) != "/proc" {
+			return nil
+		}
+		if _, err := strconv.Atoi(fi.Name()); err == nil {
+			cpt++
+		}
+		return nil
+	})
+	return cpt, err
 }
