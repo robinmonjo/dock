@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	signalBufferSize       = 2048
-	childrenSigtermTimeout = 2  //seconds
-	childrenKillTimeout    = 10 //seconds
+	signalBufferSize    = 2048
+	childrenTermTimeout = 2  //seconds
+	childrenKillTimeout = 10 //seconds
 )
 
 type signalsListener struct {
@@ -41,15 +41,24 @@ func (l *signalsListener) forward(p *process) int {
 		log.Debug(s)
 		switch s {
 		case syscall.SIGCHLD:
-			//child exited, sending a sigterm to all pses and collecting waits TODO: kill timeout
+			done := make(chan bool, 1)
 			if os.Getpid() == 1 { //if i'am the init process (supposed to be but I crashed my mac twice :) )
 				go func() {
-					<-time.After(childrenSigtermTimeout * time.Second)
-					syscall.Kill(-1, syscall.SIGTERM)
+					timeouts := []time.Duration{childrenTermTimeout, childrenKillTimeout}
+					sigs := []syscall.Signal{syscall.SIGTERM, syscall.SIGKILL}
+					for i := 0; i < 2; i++ {
+						select {
+						case <-time.After(timeouts[i] * time.Second):
+							syscall.Kill(-1, sigs[i])
+						case <-done:
+							return
+						}
+					}
 				}()
 			}
 
 			exits, err := l.reap()
+			done <- true
 			if err != nil {
 				log.Error(err)
 			}
