@@ -55,7 +55,7 @@ func start(c *cli.Context) (int, error) {
 	}
 	defer process.cleanup()
 
-	signalsListener := newSignalsListener()
+	sh := newSignalsHandler()
 
 	var err error
 
@@ -71,7 +71,7 @@ func start(c *cli.Context) (int, error) {
 
 	log.Debugf("process pid: %d", process.pid())
 
-	exit := signalsListener.forward(process)
+	exit := sh.forward(process)
 
 	if c.Bool("debug") {
 		//assert, at this point only 1 process should be running, self

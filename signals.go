@@ -16,20 +16,20 @@ const (
 	childrenKillTimeout = 5 //seconds
 )
 
-type signalsListener struct {
+type signalsHandler struct {
 	signals chan os.Signal
 }
 
-func newSignalsListener() *signalsListener {
+func newSignalsHandler() *signalsHandler {
 	s := make(chan os.Signal, signalBufferSize)
 	signal.Notify(s)
 
-	return &signalsListener{
+	return &signalsHandler{
 		signals: s,
 	}
 }
 
-func (l *signalsListener) forward(p *process) int {
+func (l *signalsHandler) forward(p *process) int {
 
 	cpid := p.pid()
 
@@ -39,6 +39,7 @@ func (l *signalsListener) forward(p *process) int {
 		switch s {
 		case syscall.SIGWINCH:
 			p.resizePty()
+
 		case syscall.SIGCHLD:
 			done := make(chan bool, 1)
 
@@ -105,7 +106,7 @@ type exit struct {
 }
 
 // this may block if child processes doesn't respond to their parent death
-func (l *signalsListener) reap() ([]exit, error) {
+func (l *signalsHandler) reap() ([]exit, error) {
 	var (
 		exits []exit
 		ws    syscall.WaitStatus
