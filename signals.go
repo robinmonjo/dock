@@ -37,6 +37,8 @@ func (l *signalsListener) forward(p *process) int {
 		log.Debug(s)
 
 		switch s {
+		case syscall.SIGWINCH:
+			p.resizePty()
 		case syscall.SIGCHLD:
 			done := make(chan bool, 1)
 

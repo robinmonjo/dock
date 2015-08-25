@@ -5,14 +5,13 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"syscall"
 
 	"github.com/kr/pty"
 	"github.com/robinmonjo/dock/term"
 )
 
 type process struct {
-	argv      []string //argv[0] mus be the path
+	argv      []string //argv[0] must be the path
 	cmd       *exec.Cmd
 	stdin     io.Reader
 	stdout    io.Writer
@@ -109,9 +108,6 @@ func (p *process) pid() int {
 }
 
 func (p *process) signal(sig os.Signal) error {
-	if sig == syscall.SIGWINCH {
-		p.resizePty()
-	}
 	return p.cmd.Process.Signal(sig)
 }
 
