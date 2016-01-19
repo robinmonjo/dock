@@ -16,6 +16,9 @@ mac: vendor
 test:
 	GOPATH=$(GOPATH) TEST_IMAGE=$(IMAGE_NAME) bash -c 'cd integration && $(GO) test'
 
+testr:
+	GOPATH=$(GOPATH) bash -c "cd system && go test"
+
 release:
 
 clean:

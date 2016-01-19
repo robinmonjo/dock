@@ -6,6 +6,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	"github.com/robinmonjo/dock/notifier"
 )
 
 var (
@@ -23,6 +24,8 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{Name: "interactive, i", Usage: "run the process in a pty"},
 		cli.BoolFlag{Name: "debug, d", Usage: "run in debug mode"},
+		cli.StringFlag{Name: "web-hook", Usage: "web hook to notify process status changes"},
+		cli.StringFlag{Name: "bind-port", Usage: "port the process is expected to bind"},
 	}
 
 	app.Action = func(c *cli.Context) {
@@ -57,6 +60,14 @@ func start(c *cli.Context) (int, error) {
 
 	sh := newSignalsHandler()
 
+	wh := c.String("web-hook")
+	notifier.WebHook = wh
+
+	if wh != "" {
+		notifier.NotifyHook(notifier.StatusStarting)
+		defer notifier.NotifyHook(notifier.StatusCrashed)
+	}
+
 	var err error
 
 	if c.Bool("interactive") {
@@ -69,9 +80,21 @@ func start(c *cli.Context) (int, error) {
 		return -1, err
 	}
 
+	if wh != "" {
+		go func() {
+			bp := c.String("bind-port")
+			if bp != "" {
+				//wait for process to bind port
+
+			} else {
+				notifier.NotifyHook(notifier.StatusRunning)
+			}
+		}()
+	}
+
 	log.Debugf("process pid: %d", process.pid())
 
-	exit := sh.forward(process)
+	exit := sh.forward(process) //blocking call
 
 	if c.Bool("debug") {
 		//assert, at this point only 1 process should be running, self

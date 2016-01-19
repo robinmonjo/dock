@@ -70,9 +70,7 @@ func (l *signalsHandler) forward(p *process) int {
 				}
 			}
 
-		case syscall.SIGINT:
-			fallthrough
-		case syscall.SIGTERM:
+		case syscall.SIGTERM, syscall.SIGINT:
 			ps, err := system.NewProcStatus(cpid)
 			if err != nil {
 				log.Error(err)
