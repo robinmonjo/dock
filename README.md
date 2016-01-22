@@ -19,6 +19,3 @@
 
 Test TODO
 - web-hook
-- penser à un truc clean pour faire les tests
-
-- finish this weekend
