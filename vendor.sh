@@ -39,4 +39,7 @@ clone() {
 
 clone git github.com/codegangsta/cli v1.2.0
 clone git github.com/Sirupsen/logrus v0.8.6
+clone git github.com/robinmonjo/procfs v0.1
 clone git github.com/kr/pty
+clone git github.com/docker/docker/pkg/term
+

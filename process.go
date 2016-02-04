@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"syscall"
 
 	"github.com/kr/pty"
 	"github.com/robinmonjo/dock/term"
@@ -42,6 +43,11 @@ func (p *process) beforeStart() error {
 	}
 
 	p.cmd = exec.Command(path, args...)
+
+	p.cmd.SysProcAttr = &syscall.SysProcAttr{
+		Pdeathsig: syscall.SIGTERM,
+	}
+
 	return nil
 }
 
@@ -53,10 +59,6 @@ func (p *process) start() error {
 	p.cmd.Stdin = p.stdin
 	p.cmd.Stdout = p.stdout
 	p.cmd.Stderr = p.stderr
-
-	//	p.cmd.SysProcAttr = &syscall.SysProcAttr{
-	//		Pdeathsig: syscall.SIGTERM,
-	//	}
 
 	return p.cmd.Start()
 }

@@ -1,12 +1,11 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strconv"
+	"strings"
 	"syscall"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/robinmonjo/procfs"
 )
 
 const exitSignalOffset = 128
@@ -20,27 +19,26 @@ func exitStatus(status syscall.WaitStatus) int {
 	return status.ExitStatus()
 }
 
-//run ps -ef and print the output (used for debugging)
-func runPsef() {
-	out, _ := exec.Command("/bin/ps", "-ef").Output()
-	fmt.Printf("%s\n", out)
+// Print the current process tree
+func printProcessTree() {
+	procfs.WalkProcs(func(p *procfs.Proc) (bool, error) {
+		status, err := p.Status()
+		if err != nil {
+			log.Printf("%d", p.Pid)
+		} else {
+			args, err := p.CmdLine()
+			if err != nil {
+				args = []string{status.Name}
+			}
+			log.Printf("%d\t%d\t%s\t%s", p.Pid, status.PPid, status.State, strings.Join(args, " "))
+		}
+		return true, nil
+	})
 }
 
-// count the number of process currently running
-func countRunningPses() (int, error) {
-	cpt := 0
-	err := filepath.Walk("/proc", func(path string, fi os.FileInfo, err error) error {
-		if path == "/proc" {
-			return nil
-		}
-
-		if filepath.Dir(path) != "/proc" {
-			return nil
-		}
-		if _, err := strconv.Atoi(fi.Name()); err == nil {
-			cpt++
-		}
-		return nil
+// Send the given signal to every processes except for the PID 1
+func signalAllExceptPid1(sig syscall.Signal) error {
+	return procfs.WalkProcs(func(p *procfs.Proc) (bool, error) {
+		return true, syscall.Kill(p.Pid, sig)
 	})
-	return cpt, err
 }

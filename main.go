@@ -7,6 +7,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/robinmonjo/dock/notifier"
+	"github.com/robinmonjo/procfs"
 )
 
 var (
@@ -98,7 +99,7 @@ func start(c *cli.Context) (int, error) {
 
 	if c.Bool("debug") {
 		//assert, at this point only 1 process should be running, self
-		i, err := countRunningPses()
+		i, err := procfs.CountRunningProcs()
 		if err != nil {
 			log.Error(err)
 		} else {

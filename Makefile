@@ -3,23 +3,14 @@ GOPATH:=$(CWD)/vendor
 GO:=$(shell which go)
 VERSION:=0.1
 HARDWARE=$(shell uname -m)
-IMAGE_NAME=robinmonjo/ubuntu-dock:dev
+IMAGE_NAME=robinmonjo/alpine-dock:dev
 
 build: vendor
 	GOPATH=$(GOPATH) GOOS=linux $(GO) build -ldflags="-X main.version=$(VERSION)"
 	docker build -t $(IMAGE_NAME) .
 
-#build on mac os
-mac: vendor
-	GOPATH=$(GOPATH) $(GO) build -ldflags="-X main.version=$(VERSION)"
-
-test:
+test: build
 	GOPATH=$(GOPATH) TEST_IMAGE=$(IMAGE_NAME) bash -c 'cd integration && $(GO) test'
-
-testr:
-	GOPATH=$(GOPATH) bash -c "cd system && go test"
-
-release:
 
 clean:
 	rm -rf ./dock ./release ./vendor/pkg

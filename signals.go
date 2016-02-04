@@ -4,16 +4,16 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/robinmonjo/dock/system"
 )
 
+// resources: - https://github.com/opencontainers/runc/blob/master/signals.go
+//            - https://github.com/Yelp/dumb-init/blob/master/dumb-init.c
+//            - https://github.com/phusion/baseimage-docker/blob/master/image/bin/my_init
+
 const (
-	signalBufferSize    = 2048
-	childrenTermTimeout = 2 //seconds
-	childrenKillTimeout = 5 //seconds
+	signalBufferSize = 2048
 )
 
 type signalsHandler struct {
@@ -29,11 +29,11 @@ func newSignalsHandler() *signalsHandler {
 	}
 }
 
-func (l *signalsHandler) forward(p *process) int {
+func (h *signalsHandler) forward(p *process) int {
 
-	cpid := p.pid()
+	pid1 := p.pid()
 
-	for s := range l.signals {
+	for s := range h.signals {
 		log.Debug(s)
 
 		switch s {
@@ -41,53 +41,29 @@ func (l *signalsHandler) forward(p *process) int {
 			p.resizePty()
 
 		case syscall.SIGCHLD:
-			done := make(chan bool, 1)
-
-			if os.Getpid() == 1 { //if i'am the init process (supposed to be but I crashed my mac twice :) )
-				go func() {
-					timeouts := []time.Duration{childrenTermTimeout, childrenKillTimeout}
-					sigs := []syscall.Signal{syscall.SIGTERM, syscall.SIGKILL}
-					for i := 0; i < 2; i++ {
-						select {
-						case <-time.After(timeouts[i] * time.Second):
-							syscall.Kill(-1, sigs[i])
-						case <-done:
-							return
-						}
-					}
-				}()
+			//child process died, the container will exits
+			//sending sigterm to every remaining processes before calling wait4
+			if err := signalAllExceptPid1(syscall.SIGTERM); err != nil {
+				log.Debugf("failed to send sigterm signal: %v", err)
 			}
 
-			exits, err := l.reap()
-			done <- true
+			//TODO trigger in X seconds a sigkill to never get stuck in the reap loop
+
+			//waiting for all processes to die
+			exits, err := reap()
 			if err != nil {
 				log.Error(err)
 			}
+
 			for _, e := range exits {
-				if e.pid == cpid {
+				if e.pid == pid1 {
 					p.wait()
 					return e.status
 				}
 			}
 
-		case syscall.SIGTERM, syscall.SIGINT:
-			ps, err := system.NewProcStatus(cpid)
-			if err != nil {
-				log.Error(err)
-			}
-
-			if !ps.SignalAsEffect(s.(syscall.Signal)) {
-				//you won't ignore or block my interupts, I'm your boss
-				if err := p.signal(syscall.SIGKILL); err != nil {
-					log.Error(err)
-				}
-			} else {
-				if err := p.signal(s); err != nil {
-					log.Error(err)
-				}
-			}
-
 		default:
+			//simply forward the signal to the process
 			if err := p.signal(s); err != nil {
 				log.Error(err)
 			}
@@ -104,11 +80,10 @@ type exit struct {
 }
 
 // this may block if child processes doesn't respond to their parent death
-func (l *signalsHandler) reap() ([]exit, error) {
+func reap() (exits []exit, err error) {
 	var (
-		exits []exit
-		ws    syscall.WaitStatus
-		rus   syscall.Rusage
+		ws  syscall.WaitStatus
+		rus syscall.Rusage
 	)
 	for {
 		pid, err := syscall.Wait4(-1, &ws, 0, &rus)
@@ -121,6 +96,7 @@ func (l *signalsHandler) reap() ([]exit, error) {
 		if pid <= 0 {
 			return exits, nil
 		}
+		log.Debugf("process with PID %d died", pid)
 		exits = append(exits, exit{
 			pid:    pid,
 			status: exitStatus(ws),
