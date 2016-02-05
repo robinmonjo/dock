@@ -6,10 +6,20 @@ HARDWARE=$(shell uname -m)
 IMAGE_NAME=robinmonjo/alpine-dock:dev
 
 build: vendor
-	GOPATH=$(GOPATH) GOOS=linux $(GO) build -ldflags="-X main.version=$(VERSION)"
+ifeq ($(IN_CONTAINER), true)
+	GOPATH=$(GOPATH) $(GO) build -ldflags="-X main.version=$(VERSION)"
+else
 	docker build -t $(IMAGE_NAME) .
+endif
+	
+test:
+ifeq ($(IN_CONTAINER), true)
+	GOPATH=$(GOPATH) bash -c 'cd port && $(GO) test'
+else
+	docker run -it -w "/dock" -e IN_CONTAINER=true $(IMAGE_NAME) bash -c 'make test'
+endif
 
-test: build
+integration: build
 	GOPATH=$(GOPATH) TEST_IMAGE=$(IMAGE_NAME) bash -c 'cd integration && $(GO) test'
 
 clean:
