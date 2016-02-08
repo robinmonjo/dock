@@ -7,6 +7,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/robinmonjo/dock/notifier"
+	"github.com/robinmonjo/dock/port"
 	"github.com/robinmonjo/procfs"
 )
 
@@ -83,9 +84,32 @@ func start(c *cli.Context) (int, error) {
 
 	if wh != "" {
 		go func() {
-			bp := c.String("bind-port")
-			if bp != "" {
+			bindPort := c.String("bind-port")
+			if bindPort != "" {
 				//wait for process to bind port
+				for {
+					p := procfs.Self()
+					descendants, err := p.Descendants()
+					if err != nil {
+						log.Error(err)
+						break
+					}
+					pids := []int{}
+					for _, p := range descendants {
+						pids = append(pids, p.Pid)
+					}
+
+					binderPid, err := port.IsPortBound(bindPort, pids)
+					if err != nil {
+						log.Error(err)
+						break
+					}
+					if binderPid != -1 {
+						log.Debugf("port %s binded by pid %d", bindPort, binderPid)
+						notifier.NotifyHook(notifier.StatusRunning)
+						break
+					}
+				}
 
 			} else {
 				notifier.NotifyHook(notifier.StatusRunning)

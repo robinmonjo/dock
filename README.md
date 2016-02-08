@@ -26,12 +26,11 @@ Step 3 may block if some processes do not respond to the SIGTERM in step 2. If t
 
 #TODO
 
-- detect port binding using procfs + test (take test from psdock3)
+- test port binding check
 - log rotations + test (take it from psdock3)
 - stdout, stderr, stdin redirection
 - stdout prefix + coloring
 - check if err on start is a wait status and if so, return the exit code (i.e: 127 path not found)
-- find a way to import only the term package from docker instead of having it here
 
 - more testing
 

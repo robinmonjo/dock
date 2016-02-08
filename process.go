@@ -7,8 +7,8 @@ import (
 	"os/exec"
 	"syscall"
 
+	"github.com/docker/docker/pkg/term"
 	"github.com/kr/pty"
-	"github.com/robinmonjo/dock/term"
 )
 
 type process struct {

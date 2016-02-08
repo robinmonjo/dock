@@ -42,3 +42,6 @@ clone git github.com/Sirupsen/logrus v0.8.6
 clone git github.com/robinmonjo/procfs v0.1
 clone git github.com/kr/pty
 
+#importing term from docker, using svn as we only want the term package
+svn export https://github.com/docker/docker/trunk/pkg/term src/github.com/docker/docker/pkg/term --non-interactive --trust-server-cert
+
