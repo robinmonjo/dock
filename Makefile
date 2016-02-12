@@ -12,7 +12,7 @@ else
 	docker build -t $(IMAGE_NAME) .
 endif
 	
-test:
+test: build
 ifeq ($(IN_CONTAINER), true)
 	GOPATH=$(GOPATH) bash -c 'cd port && $(GO) test'
 else

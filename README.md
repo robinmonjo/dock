@@ -26,7 +26,7 @@ Step 3 may block if some processes do not respond to the SIGTERM in step 2. If t
 
 #TODO
 
-- test port binding check
+- test port binding check (to continue with nc ...)
 - log rotations + test (take it from psdock3)
 - stdout, stderr, stdin redirection
 - stdout prefix + coloring

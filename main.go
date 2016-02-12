@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -65,10 +66,8 @@ func start(c *cli.Context) (int, error) {
 	wh := c.String("web-hook")
 	notifier.WebHook = wh
 
-	if wh != "" {
-		notifier.NotifyHook(notifier.StatusStarting)
-		defer notifier.NotifyHook(notifier.StatusCrashed)
-	}
+	processStateChanged(notifier.StatusStarting)
+	defer processStateChanged(notifier.StatusCrashed)
 
 	var err error
 
@@ -82,42 +81,42 @@ func start(c *cli.Context) (int, error) {
 		return -1, err
 	}
 
-	if wh != "" {
-		go func() {
-			bindPort := c.String("bind-port")
-			if bindPort != "" {
-				//wait for process to bind port
-				for {
-					p := procfs.Self()
-					descendants, err := p.Descendants()
-					if err != nil {
-						log.Error(err)
-						break
-					}
-					pids := []int{}
-					for _, p := range descendants {
-						pids = append(pids, p.Pid)
-					}
-
-					binderPid, err := port.IsPortBound(bindPort, pids)
-					if err != nil {
-						log.Error(err)
-						break
-					}
-					if binderPid != -1 {
-						log.Debugf("port %s binded by pid %d", bindPort, binderPid)
-						notifier.NotifyHook(notifier.StatusRunning)
-						break
-					}
-				}
-
-			} else {
-				notifier.NotifyHook(notifier.StatusRunning)
-			}
-		}()
-	}
-
 	log.Debugf("process pid: %d", process.pid())
+
+	go func() {
+		bindPort := c.String("bind-port")
+		if bindPort != "" {
+			//wait for process to bind port
+			for {
+				p := procfs.Self()
+				descendants, err := p.Descendants()
+				if err != nil {
+					log.Error(err)
+					break
+				}
+				pids := []int{}
+				for _, p := range descendants {
+					pids = append(pids, p.Pid)
+				}
+				log.Debug(pids)
+
+				binderPid, err := port.IsPortBound(bindPort, pids)
+				if err != nil {
+					log.Error(err)
+					break
+				}
+				log.Debug(binderPid)
+				if binderPid != -1 {
+					log.Debugf("port %s binded by pid %d", bindPort, binderPid)
+					processStateChanged(notifier.StatusRunning)
+					break
+				}
+				time.Sleep(200 * time.Millisecond)
+			}
+		} else {
+			processStateChanged(notifier.StatusRunning)
+		}
+	}()
 
 	exit := sh.forward(process) //blocking call
 
@@ -134,4 +133,11 @@ func start(c *cli.Context) (int, error) {
 	}
 
 	return exit, nil
+}
+
+func processStateChanged(state notifier.PsStatus) {
+	log.Debugf("process state: %q", state)
+	if notifier.WebHook != "" {
+		notifier.NotifyHook(notifier.StatusCrashed)
+	}
 }
