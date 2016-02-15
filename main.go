@@ -10,6 +10,8 @@ import (
 	"github.com/robinmonjo/dock/notifier"
 	"github.com/robinmonjo/dock/port"
 	"github.com/robinmonjo/procfs"
+
+	_ "github.com/robinmonjo/dock/logrotate"
 )
 
 var (
