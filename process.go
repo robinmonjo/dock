@@ -74,17 +74,34 @@ func (p *process) startInteractive() error {
 	}
 	p.pty = f
 
-	//if stdin, set raw on stdin
-	//if network, disable echo on p.pty
+	if p.wire.Input == os.Stdin {
+		// the current terminal shall pass everything to the console, make it ignores ctrl+C etc ...
+		// this is done by making the terminal raw. The state is saved to reset user's terminal settings
+		// when dock exits
+		state, err := term.SetRawTerminal(os.Stdin.Fd())
+		if err != nil {
+			return err
+		}
+		p.termState = &termState{
+			state: state,
+			fd:    os.Stdin.Fd(),
+		}
+	} else {
+		// wire.Input is a socket (tcp, tls ...). Obvioulsy, we can't set the remote user's terminal in raw mode, however we can at least
+		// disable echo on the console
+		state, err := term.SaveState(p.pty.Fd())
+		if err != nil {
+			return err
+		}
+		if err := term.DisableEcho(p.pty.Fd(), state); err != nil {
+			return err
+		}
+		p.termState = &termState{
+			state: state,
+			fd:    p.pty.Fd(),
+		}
+	}
 
-	state, err := term.SetRawTerminal(os.Stdin.Fd())
-	if err != nil {
-		return err
-	}
-	p.termState = &termState{
-		state: state,
-		fd:    os.Stdin.Fd(),
-	}
 	p.resizePty()
 	go io.Copy(p.wire, f)
 	go io.Copy(f, p.wire)

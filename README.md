@@ -36,11 +36,11 @@ If given `-stdio` is a file, specifying `-log-rotate X` perform a log rotation e
 
 #TODO
 
-- stdout, stderr, stdin redirection / why cmd.wlait blocks ? Handle if dockio is a network stream, stop process if disconnected
 - stdout prefix + coloring
 - check if err on start is a wait status and if so, return the exit code (i.e: 127 path not found)
 - explain how to dev on
 - test port binding check (to continue with nc ...)
+- stop process if disconnected
 
 - more testing
 

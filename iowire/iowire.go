@@ -37,7 +37,7 @@ type Wire struct {
 	CloseCh chan bool
 }
 
-func NewWire(uri string, pref string, prefColor Color) (*Wire, error) {
+func NewWire(uri string) (*Wire, error) {
 	u, err := url.Parse(uri)
 	if err != nil {
 		return nil, err
@@ -84,17 +84,17 @@ func NewWire(uri string, pref string, prefColor Color) (*Wire, error) {
 		wire.Output = conn
 	}
 
-	if pref != "" {
-		if prefColor == NoColor {
-			wire.prefix = []byte(pref)
-		} else {
-			wire.prefix = []byte(escapeCode(prefColor) + pref + resetEscapeCode())
-		}
-	}
-
 	wire.CloseCh = make(chan bool, 10)
 
 	return wire, nil
+}
+
+func (wire *Wire) SetPrefix(prefix string, color Color) {
+	if color == NoColor {
+		wire.prefix = []byte(prefix)
+	} else {
+		wire.prefix = []byte(escapeCode(color) + prefix + resetEscapeCode())
+	}
 }
 
 //tell whether or not the stream is interactive

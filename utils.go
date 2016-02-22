@@ -5,6 +5,7 @@ import (
 	"syscall"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/robinmonjo/dock/iowire"
 	"github.com/robinmonjo/procfs"
 )
 
@@ -41,4 +42,13 @@ func signalAllExceptPid1(sig syscall.Signal) error {
 	return procfs.WalkProcs(func(p *procfs.Proc) (bool, error) {
 		return true, syscall.Kill(p.Pid, sig)
 	})
+}
+
+// prefix args have the following format: --prefix some-prefix[:blue]
+func parsePrefixArg(prefix string) (string, iowire.Color) {
+	comps := strings.Split(prefix, ":")
+	if len(comps) == 1 {
+		return comps[0], iowire.NoColor
+	}
+	return comps[0], iowire.MapColor(comps[len(comps)-1])
 }

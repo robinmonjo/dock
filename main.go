@@ -12,7 +12,7 @@ import (
 	"github.com/robinmonjo/procfs"
 
 	"github.com/robinmonjo/dock/iowire"
-	_ "github.com/robinmonjo/dock/logrotate"
+	"github.com/robinmonjo/dock/logrotate"
 )
 
 var (
@@ -32,6 +32,8 @@ func main() {
 		cli.StringFlag{Name: "web-hook", Usage: "web hook to notify process status changes"},
 		cli.StringFlag{Name: "bind-port", Usage: "port the process is expected to bind"},
 		cli.StringFlag{Name: "io", Usage: "io of the process"},
+		cli.StringFlag{Name: "stdout-prefix", Usage: "add a prefix to stdout lines (format: <prefix>:<color>)"},
+		cli.IntFlag{Name: "log-rotate", Usage: "duration in hour when stdoud should rotate (if `--io` is a file)"},
 	}
 
 	app.Action = func(c *cli.Context) {
@@ -56,11 +58,17 @@ func main() {
 func start(c *cli.Context) (int, error) {
 	log.Debugf("dock pid: %d", os.Getpid())
 
-	wire, err := iowire.NewWire(c.String("io"), "", iowire.NoColor)
+	wire, err := iowire.NewWire(c.String("io"))
 	if err != nil {
 		return 1, err
 	}
 	defer wire.Close()
+
+	//experimental, only work fine over network
+	prefix, color := parsePrefixArg(c.String("stdout-prefix"))
+	if wire.URL.Scheme != "file" && wire.Output != os.Stdout {
+		wire.SetPrefix(prefix, color)
+	}
 
 	process := &process{
 		argv: c.Args(),
@@ -82,45 +90,19 @@ func start(c *cli.Context) (int, error) {
 
 	log.Debugf("process pid: %d", process.pid())
 
-	// // log rotation is specified and if stdout redirecto to a file
-	// if c.Int("log-rotate") > 0 && s.URL.Scheme == "file" {
-	// 	r := logrotate.NewRotator(s.URL.Host + s.URL.Path)
-	// 	r.RotationDelay = time.Duration(c.Int("log-rotate")) * time.Hour
-	// 	go r.StartWatching()
-	// 	defer r.StopWatching()
-	// }
+	// log rotation is specified and if stdout redirecto to a file
+	if c.Int("log-rotate") > 0 && wire.URL.Scheme == "file" {
+		r := logrotate.NewRotator(wire.URL.Host + wire.URL.Path)
+		r.RotationDelay = time.Duration(c.Int("log-rotate")) * time.Hour
+		go r.StartWatching()
+		defer r.StopWatching()
+	}
 
 	// watch ports
 	go func() {
 		bindPort := c.String("bind-port")
 		if bindPort != "" {
-			//wait for process to bind port
-			for {
-				p := procfs.Self()
-				descendants, err := p.Descendants()
-				if err != nil {
-					log.Error(err)
-					break
-				}
-				pids := []int{}
-				for _, p := range descendants {
-					pids = append(pids, p.Pid)
-				}
-				log.Debug(pids)
-
-				binderPid, err := port.IsPortBound(bindPort, pids)
-				if err != nil {
-					log.Error(err)
-					break
-				}
-				log.Debug(binderPid)
-				if binderPid != -1 {
-					log.Debugf("port %s binded by pid %d", bindPort, binderPid)
-					processStateChanged(notifier.StatusRunning)
-					break
-				}
-				time.Sleep(200 * time.Millisecond)
-			}
+			waitPortBinding(bindPort)
 		} else {
 			processStateChanged(notifier.StatusRunning)
 		}
@@ -147,5 +129,34 @@ func processStateChanged(state notifier.PsStatus) {
 	log.Debugf("process state: %q", state)
 	if notifier.WebHook != "" {
 		notifier.NotifyHook(notifier.StatusCrashed)
+	}
+}
+
+func waitPortBinding(watchedPort string) {
+	for {
+		p := procfs.Self()
+		descendants, err := p.Descendants()
+		if err != nil {
+			log.Error(err)
+			break
+		}
+		pids := []int{}
+		for _, p := range descendants {
+			pids = append(pids, p.Pid)
+		}
+		log.Debug(pids)
+
+		binderPid, err := port.IsPortBound(watchedPort, pids)
+		if err != nil {
+			log.Error(err)
+			break
+		}
+		log.Debug(binderPid)
+		if binderPid != -1 {
+			log.Debugf("port %s binded by pid %d", watchedPort, binderPid)
+			processStateChanged(notifier.StatusRunning)
+			break
+		}
+		time.Sleep(200 * time.Millisecond)
 	}
 }
