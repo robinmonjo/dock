@@ -15,7 +15,8 @@ endif
 test: build
 ifeq ($(IN_CONTAINER), true)
 	GOPATH=$(GOPATH) bash -c 'cd port && $(GO) test'
-	GOPATH=$(GOPATH) bash -c 'cd logrotate && $(GO) test'
+	#GOPATH=$(GOPATH) bash -c 'cd logrotate && $(GO) test'
+	GOPATH=$(GOPATH) bash -c 'cd iowire && $(GO) test'
 else
 	docker run -it -w "/dock" -e IN_CONTAINER=true $(IMAGE_NAME) bash -c 'make test'
 endif

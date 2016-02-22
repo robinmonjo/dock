@@ -50,14 +50,19 @@ func (h *signalsHandler) forward(p *process) int {
 			//TODO trigger in X seconds a sigkill to never get stuck in the reap loop
 
 			//waiting for all processes to die
+			log.Debug("reaping all children")
 			exits, err := reap()
+			log.Debug("children reaped")
 			if err != nil {
 				log.Error(err)
 			}
 
 			for _, e := range exits {
 				if e.pid == pid1 {
-					p.wait()
+					log.Debug("waiting")
+					p.cleanup()
+					log.Debug(p.wait())
+					log.Debug("ok")
 					return e.status
 				}
 			}

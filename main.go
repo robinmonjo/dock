@@ -11,6 +11,7 @@ import (
 	"github.com/robinmonjo/dock/port"
 	"github.com/robinmonjo/procfs"
 
+	"github.com/robinmonjo/dock/iowire"
 	_ "github.com/robinmonjo/dock/logrotate"
 )
 
@@ -27,10 +28,10 @@ func main() {
 	app.Usage = "micro init system for containers"
 
 	app.Flags = []cli.Flag{
-		cli.BoolFlag{Name: "interactive, i", Usage: "run the process in a pty"},
 		cli.BoolFlag{Name: "debug, d", Usage: "run in debug mode"},
 		cli.StringFlag{Name: "web-hook", Usage: "web hook to notify process status changes"},
 		cli.StringFlag{Name: "bind-port", Usage: "port the process is expected to bind"},
+		cli.StringFlag{Name: "io", Usage: "io of the process"},
 	}
 
 	app.Action = func(c *cli.Context) {
@@ -55,11 +56,15 @@ func main() {
 func start(c *cli.Context) (int, error) {
 	log.Debugf("dock pid: %d", os.Getpid())
 
+	wire, err := iowire.NewWire(c.String("io"), "", iowire.NoColor)
+	if err != nil {
+		return 1, err
+	}
+	defer wire.Close()
+
 	process := &process{
-		argv:   c.Args(),
-		stdin:  os.Stdin,
-		stdout: os.Stdout,
-		stderr: os.Stderr,
+		argv: c.Args(),
+		wire: wire,
 	}
 	defer process.cleanup()
 
@@ -71,20 +76,21 @@ func start(c *cli.Context) (int, error) {
 	processStateChanged(notifier.StatusStarting)
 	defer processStateChanged(notifier.StatusCrashed)
 
-	var err error
-
-	if c.Bool("interactive") {
-		err = process.startInteractive()
-	} else {
-		err = process.start()
-	}
-
-	if err != nil {
+	if err := process.start(); err != nil {
 		return -1, err
 	}
 
 	log.Debugf("process pid: %d", process.pid())
 
+	// // log rotation is specified and if stdout redirecto to a file
+	// if c.Int("log-rotate") > 0 && s.URL.Scheme == "file" {
+	// 	r := logrotate.NewRotator(s.URL.Host + s.URL.Path)
+	// 	r.RotationDelay = time.Duration(c.Int("log-rotate")) * time.Hour
+	// 	go r.StartWatching()
+	// 	defer r.StopWatching()
+	// }
+
+	// watch ports
 	go func() {
 		bindPort := c.String("bind-port")
 		if bindPort != "" {

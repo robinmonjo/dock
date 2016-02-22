@@ -9,14 +9,13 @@ import (
 
 	"github.com/docker/docker/pkg/term"
 	"github.com/kr/pty"
+	"github.com/robinmonjo/dock/iowire"
 )
 
 type process struct {
 	argv      []string //argv[0] must be the path
 	cmd       *exec.Cmd
-	stdin     io.Reader
-	stdout    io.Writer
-	stderr    io.Writer
+	wire      *iowire.Wire
 	pty       *os.File
 	termState *termState
 }
@@ -26,7 +25,7 @@ type termState struct {
 	fd    uintptr //file descriptor associated with the state
 }
 
-func (p *process) beforeStart() error {
+func (p *process) start() error {
 	n := len(p.argv)
 	if n == 0 {
 		return fmt.Errorf("argv can't be empty")
@@ -48,26 +47,27 @@ func (p *process) beforeStart() error {
 		Pdeathsig: syscall.SIGTERM,
 	}
 
-	return nil
+	if p.wire.Interactive() {
+		go func() {
+			<-p.wire.CloseCh
+			//if interactive and stream closed, send a sigterm to the process
+			p.signal(syscall.SIGTERM)
+		}()
+		return p.startInteractive()
+	} else {
+		return p.startNonInteractive()
+	}
 }
 
-func (p *process) start() error {
-	if err := p.beforeStart(); err != nil {
-		return err
-	}
-
-	p.cmd.Stdin = p.stdin
-	p.cmd.Stdout = p.stdout
-	p.cmd.Stderr = p.stderr
+func (p *process) startNonInteractive() error {
+	p.cmd.Stdin = p.wire
+	p.cmd.Stdout = p.wire
+	p.cmd.Stderr = p.wire
 
 	return p.cmd.Start()
 }
 
 func (p *process) startInteractive() error {
-	if err := p.beforeStart(); err != nil {
-		return err
-	}
-
 	f, err := pty.Start(p.cmd)
 	if err != nil {
 		return err
@@ -86,9 +86,8 @@ func (p *process) startInteractive() error {
 		fd:    os.Stdin.Fd(),
 	}
 	p.resizePty()
-	go io.Copy(p.stdout, f)
-	go io.Copy(p.stderr, f)
-	go io.Copy(f, p.stdin)
+	go io.Copy(p.wire, f)
+	go io.Copy(f, p.wire)
 	return nil
 }
 
@@ -97,6 +96,7 @@ func (p *process) wait() error {
 }
 
 func (p *process) cleanup() {
+	p.wire.Close()
 	if p.pty != nil {
 		p.pty.Close()
 	}

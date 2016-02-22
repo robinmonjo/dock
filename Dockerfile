@@ -2,7 +2,6 @@ FROM gliderlabs/alpine:3.3
 
 RUN apk add --no-cache bash make go git gcc musl-dev
 
-
 # add assets for integration testing
 ADD integration/assets /assets
 
