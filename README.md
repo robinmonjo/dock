@@ -36,11 +36,13 @@ If given `-stdio` is a file, specifying `-log-rotate X` perform a log rotation e
 
 #TODO
 
-- stdout prefix + coloring
+- doc
 - check if err on start is a wait status and if so, return the exit code (i.e: 127 path not found)
 - explain how to dev on
 - test port binding check (to continue with nc ...)
-- stop process if disconnected
-
 - more testing
+
+## Known issue (not blocking)
+- stdout prefix + coloring only available over network but sometimes prefix get written at the end of a line
+- process is not stopped if interactive and over the network and the connection is closed
 
