@@ -22,3 +22,6 @@ endif
 
 integration: build
 	TEST_IMAGE=$(IMAGE_NAME) bash -c 'cd integration && $(GO) test'
+	
+vendor:
+	bash vendor.sh
