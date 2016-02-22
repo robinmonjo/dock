@@ -1,0 +1,9 @@
+package: github.com/robinmonjo/dock
+import:
+- package: github.com/Sirupsen/logrus
+- package: github.com/codegangsta/cli
+- package: github.com/docker/docker
+  subpackages:
+  - pkg/term
+- package: github.com/kr/pty
+- package: github.com/robinmonjo/procfs

@@ -1,0 +1,16 @@
+hash: 88c06a8609649d2d98ce9987f3cccfe3fa7ee53784622016b87fcef1ebef2af6
+updated: 2016-02-22T21:18:20.19556778+01:00
+imports:
+- name: github.com/codegangsta/cli
+  version: 5db74198dee1cfe60cf06a611d03a420361baad6
+- name: github.com/docker/docker
+  version: 40397d8059594ac58250f66f93f4c28455433242
+  subpackages:
+  - pkg/term
+- name: github.com/kr/pty
+  version: f7ee69f31298ecbe5d2b349c711e2547a617d398
+- name: github.com/robinmonjo/procfs
+  version: 28615511798254078cb503b6508b6c135ef35a6a
+- name: github.com/Sirupsen/logrus
+  version: 57cce1ed6103dce7791881d3e69e55f90d986aa5
+devImports: []

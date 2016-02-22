@@ -23,7 +23,7 @@ func TestSimpleCommand(t *testing.T) {
 func TestOrphanProcessReaping(t *testing.T) {
 	d := newDocker()
 	// using --debug, dock will have a 999 exit code if more than one process exists when exiting
-	if err := d.start(true, "run", testImage, "dock", "--debug", "bash", "/assets/spawn_orphaned.sh"); err != nil {
+	if err := d.start(true, "run", testImage, "dock", "--debug", "bash", "/go/src/github.com/robinmonjo/dock/integration/assets/spawn_orphaned.sh"); err != nil {
 		fmt.Println(d.debugInfo())
 		t.Fatal(err)
 	}
