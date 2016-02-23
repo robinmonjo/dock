@@ -1,6 +1,6 @@
 # dock
 
-`dock` is a "micro init system" for containers
+`dock` is a "micro init system" for linux containers
 
 ## Inspirations / motivations
 
