@@ -73,7 +73,9 @@ Add a prefix to stdout lines. Format: `prefix[:<color>]` where color may be whit
 
 ## Working on `dock`
 
-Use the Makefile and Dockerfile :)
+- use the Makefile and Dockerfile :)
+- use the `-d` flag for verbosity
+- the `utils.go` file contains some nice function to inspect and debug
 
 # TODOs
 
