@@ -34,7 +34,7 @@ func Test_remoteWire(t *testing.T) {
 	}()
 
 	//create a stream on this server
-	wire, err := NewWire("tcp://127.0.0.1:9998", "", NoColor)
+	wire, err := NewWire("tcp://127.0.0.1:9998")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,10 +66,11 @@ func Test_remoteWire(t *testing.T) {
 }
 
 func Test_fileWire(t *testing.T) {
-	wire, err := NewWire("file:///tmp/dock_test.log", "prefix ", NoColor)
+	wire, err := NewWire("file:///tmp/dock_test.log")
 	if err != nil {
 		t.Fatal(err)
 	}
+	wire.SetPrefix("prefix ", NoColor)
 
 	wire.Write([]byte("foo bar"))
 	wire.Close()

@@ -28,12 +28,12 @@ func main() {
 	app.Usage = "micro init system for containers"
 
 	app.Flags = []cli.Flag{
-		cli.BoolFlag{Name: "debug, d", Usage: "run in debug mode"},
-		cli.StringFlag{Name: "web-hook", Usage: "web hook to notify process status changes"},
+		cli.StringFlag{Name: "io", Usage: "smart stdin / stdout (see README for more info)"},
+		cli.StringFlag{Name: "web-hook", Usage: "hook where process status changes should be notified"},
 		cli.StringFlag{Name: "bind-port", Usage: "port the process is expected to bind"},
-		cli.StringFlag{Name: "io", Usage: "io of the process"},
-		cli.StringFlag{Name: "stdout-prefix", Usage: "add a prefix to stdout lines (format: <prefix>:<color>)"},
 		cli.IntFlag{Name: "log-rotate", Usage: "duration in hour when stdoud should rotate (if `--io` is a file)"},
+		cli.StringFlag{Name: "stdout-prefix", Usage: "add a prefix to stdout lines (format: <prefix>:<color>)"},
+		cli.BoolFlag{Name: "debug, d", Usage: "run with verbose output (for developpers)"},
 	}
 
 	app.Action = func(c *cli.Context) {
