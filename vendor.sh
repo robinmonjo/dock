@@ -1,47 +1,34 @@
-#!/usr/bin/env bash
+#! /bin/bash
+
 set -e
 
-# Downloads dependencies into vendor/ directory
-mkdir -p vendor
-cd vendor
-
-clone() {
-	vcs=$1
-	pkg=$2
-	rev=$3
-
-	pkg_url=https://$pkg
-	target_dir=src/$pkg
+git_clone() {
+  pkg=$1
+  rev=$2
+  
+  pkg_url=https://$pkg
+	target_dir=vendor/$pkg
 
 	echo -n "$pkg @ $rev: "
-
-	if [ -d $target_dir ]; then
+  
+  if [ -d $target_dir ]; then
 		echo -n 'rm old, '
 		rm -fr $target_dir
 	fi
 
 	echo -n 'clone, '
-	case $vcs in
-		git)
-			git clone --quiet --no-checkout $pkg_url $target_dir
-			( cd $target_dir && git reset --quiet --hard $rev )
-			;;
-		hg)
-			hg clone --quiet --updaterev $rev $pkg_url $target_dir
-			;;
-	esac
-
-	echo -n 'rm VCS, '
+  git clone --quiet --no-checkout $pkg_url $target_dir
+  ( cd $target_dir && git reset --quiet --hard $rev )
+  
+  echo -n 'rm VCS, '
 	( cd $target_dir && rm -rf .{git,hg} )
 
 	echo done
 }
 
-clone git github.com/codegangsta/cli v1.2.0
-clone git github.com/Sirupsen/logrus v0.8.6
-clone git github.com/robinmonjo/procfs v0.1
-clone git github.com/kr/pty
+git_clone github.com/codegangsta/cli v1.2.0
+git_clone github.com/Sirupsen/logrus v0.8.6
+git_clone github.com/robinmonjo/procfs v0.1
+git_clone github.com/kr/pty
 
-#importing term from docker, using svn as we only want the term package
-svn export https://github.com/docker/docker/trunk/pkg/term src/github.com/docker/docker/pkg/term --non-interactive --trust-server-cert
-
+svn export https://github.com/docker/docker/trunk/pkg/term vendor/github.com/docker/docker/pkg/term --non-interactive --trust-server-cert

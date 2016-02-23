@@ -9,14 +9,13 @@ import (
 
 	"github.com/docker/docker/pkg/term"
 	"github.com/kr/pty"
+	"github.com/robinmonjo/dock/iowire"
 )
 
 type process struct {
 	argv      []string //argv[0] must be the path
 	cmd       *exec.Cmd
-	stdin     io.Reader
-	stdout    io.Writer
-	stderr    io.Writer
+	wire      *iowire.Wire
 	pty       *os.File
 	termState *termState
 }
@@ -26,7 +25,7 @@ type termState struct {
 	fd    uintptr //file descriptor associated with the state
 }
 
-func (p *process) beforeStart() error {
+func (p *process) start() error {
 	n := len(p.argv)
 	if n == 0 {
 		return fmt.Errorf("argv can't be empty")
@@ -48,47 +47,64 @@ func (p *process) beforeStart() error {
 		Pdeathsig: syscall.SIGTERM,
 	}
 
-	return nil
+	if p.wire.Interactive() {
+		go func() {
+			<-p.wire.CloseCh
+			//if interactive and stream closed, send a sigterm to the process
+			p.signal(syscall.SIGTERM)
+		}()
+		return p.startInteractive()
+	} else {
+		return p.startNonInteractive()
+	}
 }
 
-func (p *process) start() error {
-	if err := p.beforeStart(); err != nil {
-		return err
-	}
-
-	p.cmd.Stdin = p.stdin
-	p.cmd.Stdout = p.stdout
-	p.cmd.Stderr = p.stderr
+func (p *process) startNonInteractive() error {
+	p.cmd.Stdin = p.wire
+	p.cmd.Stdout = p.wire
+	p.cmd.Stderr = p.wire
 
 	return p.cmd.Start()
 }
 
 func (p *process) startInteractive() error {
-	if err := p.beforeStart(); err != nil {
-		return err
-	}
-
 	f, err := pty.Start(p.cmd)
 	if err != nil {
 		return err
 	}
 	p.pty = f
 
-	//if stdin, set raw on stdin
-	//if network, disable echo on p.pty
+	if p.wire.Input == os.Stdin {
+		// the current terminal shall pass everything to the console, make it ignores ctrl+C etc ...
+		// this is done by making the terminal raw. The state is saved to reset user's terminal settings
+		// when dock exits
+		state, err := term.SetRawTerminal(os.Stdin.Fd())
+		if err != nil {
+			return err
+		}
+		p.termState = &termState{
+			state: state,
+			fd:    os.Stdin.Fd(),
+		}
+	} else {
+		// wire.Input is a socket (tcp, tls ...). Obvioulsy, we can't set the remote user's terminal in raw mode, however we can at least
+		// disable echo on the console
+		state, err := term.SaveState(p.pty.Fd())
+		if err != nil {
+			return err
+		}
+		if err := term.DisableEcho(p.pty.Fd(), state); err != nil {
+			return err
+		}
+		p.termState = &termState{
+			state: state,
+			fd:    p.pty.Fd(),
+		}
+	}
 
-	state, err := term.SetRawTerminal(os.Stdin.Fd())
-	if err != nil {
-		return err
-	}
-	p.termState = &termState{
-		state: state,
-		fd:    os.Stdin.Fd(),
-	}
 	p.resizePty()
-	go io.Copy(p.stdout, f)
-	go io.Copy(p.stderr, f)
-	go io.Copy(f, p.stdin)
+	go io.Copy(p.wire, f)
+	go io.Copy(f, p.wire)
 	return nil
 }
 
@@ -97,6 +113,7 @@ func (p *process) wait() error {
 }
 
 func (p *process) cleanup() {
+	p.wire.Close()
 	if p.pty != nil {
 		p.pty.Close()
 	}

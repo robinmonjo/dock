@@ -50,14 +50,16 @@ func (h *signalsHandler) forward(p *process) int {
 			//TODO trigger in X seconds a sigkill to never get stuck in the reap loop
 
 			//waiting for all processes to die
+			log.Debug("reaping all children")
 			exits, err := reap()
+			log.Debug("children reaped")
 			if err != nil {
 				log.Error(err)
 			}
 
 			for _, e := range exits {
 				if e.pid == pid1 {
-					p.wait()
+					//p.wait() //should wor and be cleaner but sometimes it hangs because some pipes are stil open. Need to test with future version of go
 					return e.status
 				}
 			}
