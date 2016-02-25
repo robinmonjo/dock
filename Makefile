@@ -1,7 +1,6 @@
 CWD:=$(shell pwd)
 GO:=GO15VENDOREXPERIMENT=1 go
 VERSION:=0.1
-HARDWARE=$(shell uname -m)
 IMAGE_NAME=robinmonjo/alpine-dock:dev
 
 build:
@@ -22,6 +21,12 @@ endif
 
 integration: build
 	TEST_IMAGE=$(IMAGE_NAME) bash -c 'cd integration && $(GO) test'
+	
+release:
+	mkdir -p release
+	GOOS=linux $(GO) build -ldflags="-X main.version=$(VERSION)" -o release/dock
+	cd release && tar -zcf dock-v$(VERSION).tgz dock
+	rm release/dock
 	
 vendor:
 	bash vendor.sh
