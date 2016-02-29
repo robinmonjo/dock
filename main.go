@@ -128,7 +128,7 @@ func start(c *cli.Context) (int, error) {
 func processStateChanged(state notifier.PsStatus) {
 	log.Debugf("process state: %q", state)
 	if notifier.WebHook != "" {
-		notifier.NotifyHook(notifier.StatusCrashed)
+		notifier.NotifyHook(state)
 	}
 }
 

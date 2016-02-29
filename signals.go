@@ -81,7 +81,6 @@ type exit struct {
 	status int
 }
 
-// this may block if child processes doesn't respond to their parent death
 func reap() (exits []exit, err error) {
 	var (
 		ws  syscall.WaitStatus
