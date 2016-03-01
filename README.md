@@ -5,7 +5,7 @@
 ## Installation
 
 ````bash
-curl -sL https://github.com/robinmonjo/dock/releases/download/v0.2/dock-v0.2.tgz | tar -C /usr/local/bin -zxf -
+curl -sL https://github.com/robinmonjo/dock/releases/download/v0.3/dock-v0.3.tgz | tar -C /usr/local/bin -zxf -
 ````
 
 This will place the latest `dock` binary in `/usr/local/bin`
@@ -87,7 +87,6 @@ Add a prefix to stdout lines. Format: `prefix[:<color>]` where color may be whit
 
 # TODOs
 
-- actually implement the kill timeout as it is documented :)
 - [why this ?](https://github.com/gliderlabs/docker-alpine/issues/143) ?
 - fix log rotate test that fails regularly
 - more tests !

@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -14,6 +15,7 @@ import (
 
 const (
 	signalBufferSize = 2048
+	killTimeout      = 5
 )
 
 type signalsHandler struct {
@@ -47,7 +49,13 @@ func (h *signalsHandler) forward(p *process) int {
 				log.Debugf("failed to send sigterm signal: %v", err)
 			}
 
-			//TODO trigger in X seconds a sigkill to never get stuck in the reap loop
+			go func() {
+				<-time.After(killTimeout * time.Second)
+				log.Debugf("kill timed out")
+				if err := signalAllExceptPid1(syscall.SIGKILL); err != nil {
+					log.Debugf("failed to send sigkill signal: %v", err)
+				}
+			}()
 
 			//waiting for all processes to die
 			log.Debug("reaping all children")
