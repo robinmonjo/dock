@@ -87,7 +87,7 @@ Add a prefix to stdout lines. Format: `prefix[:<color>]` where color may be whit
 
 # TODOs
 
-- [why this ?](https://github.com/gliderlabs/docker-alpine/issues/143) ?
+- [why this ?](https://github.com/gliderlabs/docker-alpine/issues/143)
 - fix log rotate test that fails regularly
 - more tests !
 
