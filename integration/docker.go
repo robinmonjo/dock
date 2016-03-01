@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"syscall"
 
 	"github.com/kr/pty"
 )
@@ -19,7 +18,9 @@ type docker struct {
 }
 
 func newDocker() *docker {
-	return &docker{path: "docker"} //docker must be in the path
+	return &docker{
+		path: "docker", //docker must be in the path
+	}
 }
 
 func (d *docker) start(usePty bool, args ...string) error {
@@ -48,10 +49,6 @@ func (d *docker) start(usePty bool, args ...string) error {
 	d.stderr, _ = ioutil.ReadAll(stderr)
 
 	return cmd.Wait()
-}
-
-func (d *docker) signal(sig syscall.Signal) error {
-	return d.ps.Signal(sig)
 }
 
 func (d *docker) debugInfo() string {

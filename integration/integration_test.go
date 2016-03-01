@@ -1,20 +1,26 @@
 package integration
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
-	"sync"
 	"testing"
 
 	"github.com/robinmonjo/dock/notifier"
 )
 
-var testImage string //must match with what is in the Makefile
+var (
+	testImage string //must match with what is in the Makefile
+
+	server    *hookServer
+	serverURL string
+)
 
 func init() {
 	testImage = os.Getenv("TEST_IMAGE")
+
+	server = &hookServer{}
+	h, p := server.start()
+	serverURL = fmt.Sprintf("http://%s:%s", h, p)
 }
 
 func TestSimpleCommand(t *testing.T) {
@@ -35,40 +41,80 @@ func TestOrphanProcessReaping(t *testing.T) {
 }
 
 func TestWebHook(t *testing.T) {
-	port := "9999"
-	host := "192.168.99.1" //WARNING, made to work with docker machine and virtualbox on a mac
-	expectedStatus := []notifier.PsStatus{notifier.StatusStarting, notifier.StatusRunning, notifier.StatusCrashed}
-	var wg sync.WaitGroup
-	wg.Add(len(expectedStatus))
-	cpt := 0
+	c := make(chan notifier.PsStatus, 3)
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		decoder := json.NewDecoder(r.Body)
-
-		var payload notifier.HookPayload
-
-		if err := decoder.Decode(&payload); err != nil {
-			t.Fatal(err)
-		}
-		if payload.Ps.Status != expectedStatus[cpt] {
-			t.Fatalf("expected process status %q got %q", payload.Ps.Status, expectedStatus[cpt])
-		}
-		cpt++
-		wg.Done()
-	})
-
-	go func() {
-		if err := http.ListenAndServe(":"+port, nil); err != nil {
-			t.Fatal(err)
-		}
-	}()
+	server.c = c
+	server.t = t
 
 	d := newDocker()
 
-	if err := d.start(false, "run", testImage, "dock", "--debug", "--web-hook", fmt.Sprintf("http://%s:%s", host, port), "ls"); err != nil {
+	if err := d.start(false, "run", testImage, "dock", "--debug", "--web-hook", serverURL, "ls"); err != nil {
 		fmt.Println(d.debugInfo())
 		t.Fatal(err)
 	}
-	//wait for the hook to be sent
-	wg.Wait()
+
+	for _, status := range []notifier.PsStatus{notifier.StatusStarting, notifier.StatusRunning, notifier.StatusCrashed} {
+		s := <-server.c
+		if s != status {
+			t.Fatalf("expected status %q, got %q", notifier.StatusStarting, status)
+		}
+	}
+}
+
+func TestPortBindingHook(t *testing.T) {
+	c := make(chan notifier.PsStatus, 3)
+
+	server.c = c
+	server.t = t
+	port := "9999"
+
+	d := newDocker()
+
+	if err := d.start(false, "run", testImage, "dock", "--debug", "--web-hook", serverURL, "--bind-port", port, "ls"); err != nil {
+		fmt.Println(d.debugInfo())
+		t.Fatal(err)
+	}
+	// ls will never bind the port, should never see the "running status"
+	for _, status := range []notifier.PsStatus{notifier.StatusStarting, notifier.StatusCrashed} {
+		s := <-server.c
+		if s != status {
+			t.Fatalf("expected status %q, got %q", notifier.StatusStarting, status)
+		}
+	}
+}
+
+func TestPortBinding(t *testing.T) {
+	c := make(chan notifier.PsStatus, 3)
+
+	server.c = c
+	server.t = t
+
+	d := newDocker()
+	port := "9999"
+	name := "dock-test-container"
+
+	if err := d.start(true, "run", "-d", "--name", name, testImage, "dock", "--debug", "--web-hook", serverURL, "--bind-port", port, "python", "-m", "SimpleHTTPServer", port); err != nil {
+		fmt.Println(d.debugInfo())
+		t.Fatal(err)
+	}
+
+	defer d.start(false, "rm", name)
+
+	s := <-server.c
+	if s != notifier.StatusStarting {
+		t.Fatalf("expected status %q, got %q", notifier.StatusStarting, s)
+	}
+
+	s = <-server.c
+	if s != notifier.StatusRunning {
+		t.Fatalf("expected status %q, got %q", notifier.StatusRunning, s)
+	}
+
+	if err := d.start(false, "stop", name); err != nil {
+		t.Fatal(err)
+	}
+	s = <-server.c
+	if s != notifier.StatusCrashed {
+		t.Fatalf("expected status %q, got %q", notifier.StatusCrashed, s)
+	}
 }

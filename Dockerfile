@@ -1,6 +1,6 @@
 FROM gliderlabs/alpine:3.3
 
-RUN apk add --no-cache bash make go git gcc musl-dev
+RUN apk add --no-cache bash make go git gcc musl-dev python
 
 # create workspace
 ENV GOPATH=/go

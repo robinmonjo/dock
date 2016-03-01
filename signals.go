@@ -34,7 +34,7 @@ func (h *signalsHandler) forward(p *process) int {
 	pid1 := p.pid()
 
 	for s := range h.signals {
-		log.Debug(s)
+		log.Debugf("signal: %q", s)
 
 		switch s {
 		case syscall.SIGWINCH:
@@ -65,6 +65,11 @@ func (h *signalsHandler) forward(p *process) int {
 			}
 
 		default:
+
+			if sig, ok := s.(syscall.Signal); ok {
+				logHowSignalIsHandled(p.pid(), sig)
+			}
+
 			//simply forward the signal to the process
 			if err := p.signal(s); err != nil {
 				log.Error(err)

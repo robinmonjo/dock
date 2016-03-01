@@ -121,7 +121,7 @@ func start(c *cli.Context) (int, error) {
 			}
 		}
 	}
-
+	log.Debugf("exit code: %d", exit)
 	return exit, nil
 }
 

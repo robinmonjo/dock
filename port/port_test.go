@@ -34,33 +34,3 @@ func TestIsPortBound(t *testing.T) {
 	}
 	t.Fatal("port never bound :(")
 }
-
-// func TestIsPortBoundNc(t *testing.T) {
-// 	port := "9999"
-// 	go func() {
-// 		err := exec.Command("nc", "-l", port).Run()
-// 		if err != nil {
-// 			t.Fatal(err)
-// 		}
-// 	}()
-//
-// 	maxTry := 10
-// 	for i := 0; i < maxTry; i++ {
-// 		pid, err := IsPortBound(port, []int{os.Getpid()})
-// 		if err != nil {
-// 			t.Fatal(err)
-// 		}
-// 		if pid == -1 {
-// 			continue //port not bound yet
-// 		}
-// 		//port bound
-// 		if pid != os.Getpid() {
-// 			t.Fatal("expect port to be bound by %d, got %d", os.Getpid(), pid)
-// 		} else {
-// 			return // ok
-// 		}
-// 	}
-// 	t.Fatal("port never bound :(")
-// }
-
-//TODO: text with NC why do I have a really strange behaviour ????
