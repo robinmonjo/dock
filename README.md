@@ -88,8 +88,7 @@ Add a prefix to stdout lines. Format: `prefix[:<color>]` where color may be whit
 # TODOs
 
 - actually implement the kill timeout as it is documented :)
-- check if err on start is a wait status and if so, return the exit code (i.e: 127 path not found)
-- test port binding with `nc` and see [why this](https://github.com/gliderlabs/docker-alpine/issues/143) ?
+- [why this ?](https://github.com/gliderlabs/docker-alpine/issues/143) ?
 - fix log rotate test that fails regularly
 - more tests !
 

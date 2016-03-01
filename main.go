@@ -85,7 +85,7 @@ func start(c *cli.Context) (int, error) {
 	defer processStateChanged(notifier.StatusCrashed)
 
 	if err := process.start(); err != nil {
-		return -1, err
+		return exitStatusFromError(err), err
 	}
 
 	log.Debugf("process pid: %d", process.pid())
@@ -121,7 +121,6 @@ func start(c *cli.Context) (int, error) {
 			}
 		}
 	}
-	log.Debugf("exit code: %d", exit)
 	return exit, nil
 }
 

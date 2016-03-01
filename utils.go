@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os/exec"
 	"strings"
 	"syscall"
 
@@ -18,6 +19,13 @@ func exitStatus(status syscall.WaitStatus) int {
 		return exitSignalOffset + int(status.Signal())
 	}
 	return status.ExitStatus()
+}
+
+func exitStatusFromError(err error) int {
+	if msg, ok := err.(*exec.ExitError); ok {
+		return msg.Sys().(syscall.WaitStatus).ExitStatus()
+	}
+	return -1
 }
 
 // Print the current process tree
