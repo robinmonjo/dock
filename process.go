@@ -138,8 +138,5 @@ func (p *process) resizePty() error {
 	if err != nil {
 		return err
 	}
-	if err := term.SetWinsize(p.pty.Fd(), ws); err != nil {
-		return err
-	}
-	return nil
+	return term.SetWinsize(p.pty.Fd(), ws)
 }

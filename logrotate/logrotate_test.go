@@ -114,7 +114,7 @@ func Test_StartWatching(t *testing.T) {
 	}()
 
 	r := NewRotator(logFile.Name())
-	r.RotationDelay = 200 * time.Millisecond
+	r.RotationDelay = 230 * time.Millisecond
 	r.ArchiveRetainCount = 1
 
 	//create a routine that continuously write on the file

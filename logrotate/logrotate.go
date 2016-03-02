@@ -101,7 +101,7 @@ func (r *Rotator) StartWatching() {
 	r.watching = true
 	r.ticker = time.NewTicker(r.RotationDelay)
 	for {
-		_ = <-r.ticker.C
+		<-r.ticker.C
 		if !r.watching {
 			return
 		}
