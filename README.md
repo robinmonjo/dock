@@ -92,6 +92,5 @@ Add a prefix to stdout lines. Format: `prefix[:<color>]` where color may be whit
 
 ## Known issue (not blocking)
 
-- stdout prefix + coloring only available over network but sometimes prefix get written at the end of a line
 - process is not stopped if interactive and over the network and the connection is closed
 

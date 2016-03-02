@@ -95,6 +95,7 @@ func (wire *Wire) SetPrefix(prefix string, color Color) {
 	} else {
 		wire.prefix = []byte(escapeCode(color) + prefix + resetEscapeCode())
 	}
+	wire.Write(wire.prefix) //flush first prefix
 }
 
 //tell whether or not the stream is interactive
@@ -115,15 +116,12 @@ func (wire *Wire) Terminal() bool {
 }
 
 func (wire *Wire) Write(p []byte) (int, error) {
-	if len(wire.prefix) == 0 {
+	if len(wire.prefix) == 0 || !strings.HasSuffix(string(p), "\n") {
 		return wire.Output.Write(p)
 	}
 
-	if strings.Trim(string(p), "\n\t") == "" {
-		return wire.Output.Write(p)
-	}
-
-	n, err := wire.Output.Write(append(wire.prefix, p...))
+	//will write a line, write the prefix for next line
+	n, err := wire.Output.Write(append(p, wire.prefix...))
 
 	//the caller will except the write to be len(p), so if we have a prefix, it will confused it.
 	//That is why we need to check for an ErrShortWrite error and return n = n - len(prefix)

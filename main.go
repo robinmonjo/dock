@@ -64,11 +64,7 @@ func start(c *cli.Context) (int, error) {
 	}
 	defer wire.Close()
 
-	//experimental, only work fine over network
-	prefix, color := parsePrefixArg(c.String("stdout-prefix"))
-	if wire.URL.Scheme != "file" && wire.Output != os.Stdout {
-		wire.SetPrefix(prefix, color)
-	}
+	wire.SetPrefix(parsePrefixArg(c.String("stdout-prefix")))
 
 	process := &process{
 		argv: c.Args(),
