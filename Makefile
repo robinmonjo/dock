@@ -1,6 +1,6 @@
 CWD:=$(shell pwd)
 GO:=GO15VENDOREXPERIMENT=1 go
-VERSION:=0.3
+VERSION:=0.4
 IMAGE_NAME=robinmonjo/alpine-dock:dev
 
 build:
