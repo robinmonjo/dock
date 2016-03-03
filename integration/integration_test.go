@@ -24,6 +24,7 @@ func init() {
 }
 
 func TestSimpleCommand(t *testing.T) {
+	fmt.Println("testing simple command")
 	d := newDocker()
 	if err := d.start(true, "run", testImage, "dock", "--debug", "ls"); err != nil {
 		fmt.Println(d.debugInfo())
@@ -32,6 +33,7 @@ func TestSimpleCommand(t *testing.T) {
 }
 
 func TestOrphanProcessReaping(t *testing.T) {
+	fmt.Println("testing orphan process reaping")
 	d := newDocker()
 	// using --debug, dock will have a 999 exit code if more than one process exists when exiting
 	if err := d.start(true, "run", testImage, "dock", "--debug", "bash", "/go/src/github.com/robinmonjo/dock/integration/assets/spawn_orphaned.sh"); err != nil {
@@ -41,6 +43,7 @@ func TestOrphanProcessReaping(t *testing.T) {
 }
 
 func TestWebHook(t *testing.T) {
+	fmt.Println("testing web hook call")
 	c := make(chan notifier.PsStatus, 3)
 
 	server.c = c
@@ -62,6 +65,7 @@ func TestWebHook(t *testing.T) {
 }
 
 func TestPortBindingHook(t *testing.T) {
+	fmt.Println("testing process is not considered running if specified port is not bound")
 	c := make(chan notifier.PsStatus, 3)
 
 	server.c = c
@@ -84,6 +88,7 @@ func TestPortBindingHook(t *testing.T) {
 }
 
 func TestPortBinding(t *testing.T) {
+	fmt.Println("testing web hook with port binding")
 	c := make(chan notifier.PsStatus, 3)
 
 	server.c = c
@@ -101,11 +106,13 @@ func TestPortBinding(t *testing.T) {
 	defer d.start(false, "rm", name)
 
 	s := <-server.c
+	fmt.Println(s)
 	if s != notifier.StatusStarting {
 		t.Fatalf("expected status %q, got %q", notifier.StatusStarting, s)
 	}
 
 	s = <-server.c
+	fmt.Println(s)
 	if s != notifier.StatusRunning {
 		t.Fatalf("expected status %q, got %q", notifier.StatusRunning, s)
 	}
@@ -114,6 +121,7 @@ func TestPortBinding(t *testing.T) {
 		t.Fatal(err)
 	}
 	s = <-server.c
+	fmt.Println(s)
 	if s != notifier.StatusCrashed {
 		t.Fatalf("expected status %q, got %q", notifier.StatusCrashed, s)
 	}

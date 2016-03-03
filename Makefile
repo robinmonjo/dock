@@ -15,6 +15,7 @@ ifeq ($(IN_CONTAINER), true)
 	bash -c 'cd port && $(GO) test'
 	bash -c 'cd logrotate && $(GO) test'
 	bash -c 'cd iowire && $(GO) test'
+	bash -c 'cd procfs && $(GO) test'
 else
 	docker run -it -w "/go/src/github.com/robinmonjo/dock" -e IN_CONTAINER=true $(IMAGE_NAME) bash -c 'make test'
 endif

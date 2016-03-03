@@ -7,7 +7,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/robinmonjo/dock/iowire"
-	"github.com/robinmonjo/procfs"
+	"github.com/robinmonjo/dock/procfs"
 )
 
 const exitSignalOffset = 128
