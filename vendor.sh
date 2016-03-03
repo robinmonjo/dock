@@ -28,7 +28,6 @@ git_clone() {
 
 git_clone github.com/codegangsta/cli v1.2.0
 git_clone github.com/Sirupsen/logrus v0.8.6
-git_clone github.com/robinmonjo/procfs v0.1
 git_clone github.com/kr/pty
 
 svn export https://github.com/docker/docker/trunk/pkg/term vendor/github.com/docker/docker/pkg/term --non-interactive --trust-server-cert

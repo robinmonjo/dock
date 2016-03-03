@@ -4,7 +4,7 @@ import (
 	"os"
 	"sort"
 
-	"github.com/robinmonjo/procfs"
+	"github.com/robinmonjo/dock/procfs"
 )
 
 // check whether the port is bound by one of the given PID. Return the PID of the process or -1 if port is not bound

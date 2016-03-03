@@ -9,7 +9,7 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/robinmonjo/dock/notifier"
 	"github.com/robinmonjo/dock/port"
-	"github.com/robinmonjo/procfs"
+	"github.com/robinmonjo/dock/procfs"
 
 	"github.com/robinmonjo/dock/iowire"
 	"github.com/robinmonjo/dock/logrotate"
