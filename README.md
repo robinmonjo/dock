@@ -27,7 +27,7 @@ Step 3 may block if some processes do not respond to the SIGTERM in step 2. If t
 
 ## Why `dock` ?
 
-`dock` is written in Go and has 0 dependency. The binary can simply be added into a linux container image. It also provides some useful features :
+`dock` is written in Go and has no dependency. The binary can simply be added into a linux container image. It also provides some useful features :
 
 - can call a web hook when process state changes (`starting`, `running` and `crashed`)
 - can say a process started only when a given port is bound (if you start a web server, you may want to know when this one is ready to accept connections). Think container rotation during a deployment process
