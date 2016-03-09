@@ -9,6 +9,9 @@ ifeq ($(IN_CONTAINER), true)
 else
 	docker build -t $(IMAGE_NAME) .
 endif
+
+binary:
+	$(GO) build -ldflags="-X main.version=$(VERSION)"
 	
 test: build
 ifeq ($(IN_CONTAINER), true)

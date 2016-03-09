@@ -43,10 +43,6 @@ func (p *process) start() error {
 
 	p.cmd = exec.Command(path, args...)
 
-	p.cmd.SysProcAttr = &syscall.SysProcAttr{
-		Pdeathsig: syscall.SIGTERM,
-	}
-
 	if p.wire.Interactive() {
 		go func() {
 			<-p.wire.CloseCh

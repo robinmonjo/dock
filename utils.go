@@ -45,13 +45,6 @@ func printProcessTree() {
 	})
 }
 
-// Send the given signal to every processes except for the PID 1
-func signalAllExceptPid1(sig syscall.Signal) error {
-	return procfs.WalkProcs(func(p *procfs.Proc) (bool, error) {
-		return true, syscall.Kill(p.Pid, sig)
-	})
-}
-
 // prefix args have the following format: --prefix some-prefix[:blue]
 func parsePrefixArg(prefix string) (string, iowire.Color) {
 	comps := strings.Split(prefix, ":")

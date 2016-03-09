@@ -7,6 +7,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/robinmonjo/dock/procfs"
 )
 
 // resources: - https://github.com/opencontainers/runc/blob/master/signals.go
@@ -43,16 +44,16 @@ func (h *signalsHandler) forward(p *process) int {
 			p.resizePty()
 
 		case syscall.SIGCHLD:
-			//child process died, the container will exits
+			//child process died, dock will exit
 			//sending sigterm to every remaining processes before calling wait4
-			if err := signalAllExceptPid1(syscall.SIGTERM); err != nil {
+			if err := signalAllDescendants(syscall.SIGTERM); err != nil {
 				log.Debugf("failed to send sigterm signal: %v", err)
 			}
 
 			go func() {
 				<-time.After(killTimeout * time.Second)
 				log.Debugf("kill timed out")
-				if err := signalAllExceptPid1(syscall.SIGKILL); err != nil {
+				if err := signalAllDescendants(syscall.SIGKILL); err != nil {
 					log.Debugf("failed to send sigkill signal: %v", err)
 				}
 			}()
@@ -116,4 +117,17 @@ func reap() (exits []exit, err error) {
 			status: exitStatus(ws),
 		})
 	}
+}
+
+// Send the given signal to every processes except for the PID 1
+func signalAllDescendants(sig syscall.Signal) error {
+	self := procfs.Self()
+	pses, err := self.Descendants()
+	if err != nil {
+		return err
+	}
+	for _, ps := range pses {
+		err = syscall.Kill(ps.Pid, sig)
+	}
+	return err
 }
