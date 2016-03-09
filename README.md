@@ -34,6 +34,8 @@ Step 3 may block if some processes do not respond to the SIGTERM in step 2. If t
 - smart stdin / stdout (see the `--io` flag for more information)
 - can provide log rotation (see `--log-rotate` flag for more information)
 
+Note: `dock` may be used outside of a container, directly on a linux system
+
 ## Usage
 
 `dock [OPTIONS] command`
