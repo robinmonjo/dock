@@ -69,7 +69,7 @@ func (h *signalsHandler) forward(p *process) int {
 
 			for _, e := range exits {
 				if e.pid == pid1 {
-					//p.wait() //should work and be cleaner but sometimes it hangs because some pipes are stil open. Need to test with future version of go
+					p.wait()
 					return e.status
 				}
 			}
