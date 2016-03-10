@@ -33,6 +33,7 @@ Step 3 may block if some processes do not respond to the SIGTERM in step 2. If t
 - can say a process started only when a given port is bound (if you start a web server, you may want to know when this one is ready to accept connections). Think container rotation during a deployment process
 - smart stdin / stdout (see the `--io` flag for more information)
 - can provide log rotation (see `--log-rotate` flag for more information)
+- authoritarian signal transmission (see `--thug` flag for more information)
 
 Note: `dock` may be used outside of a container, directly on a linux system
 
