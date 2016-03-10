@@ -5,7 +5,7 @@
 ## Installation
 
 ````bash
-curl -sL https://github.com/robinmonjo/dock/releases/download/v0.5/dock-v0.5.tgz | tar -C /usr/local/bin -zxf -
+curl -sL https://github.com/robinmonjo/dock/releases/download/v0.6/dock-v0.6.tgz | tar -C /usr/local/bin -zxf -
 ````
 
 This will place the latest `dock` binary in `/usr/local/bin`
