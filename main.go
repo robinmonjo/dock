@@ -57,6 +57,11 @@ func main() {
 }
 
 func start(c *cli.Context) (int, error) {
+	if len(c.Args()) == 0 {
+		cli.ShowAppHelp(c)
+		return 0, nil
+	}
+
 	log.Debugf("dock pid: %d", os.Getpid())
 
 	wire, err := iowire.NewWire(c.String("io"))
