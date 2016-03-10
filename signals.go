@@ -20,7 +20,8 @@ const (
 )
 
 type signalsHandler struct {
-	signals chan os.Signal
+	signals   chan os.Signal
+	authority bool
 }
 
 func newSignalsHandler() *signalsHandler {
@@ -73,11 +74,36 @@ func (h *signalsHandler) forward(p *process) int {
 				}
 			}
 
-		default:
+		case syscall.SIGINT:
+			fallthrough
+		case syscall.SIGTERM:
+			fallthrough
+		case syscall.SIGQUIT:
+			//stopping signals
+			sigToForward := s
 
-			if sig, ok := s.(syscall.Signal); ok {
-				logHowSignalIsHandled(p.pid(), sig)
+			if h.authority {
+				blocked, err := isSignalBlocked(pid1, s)
+				if err != nil {
+					log.Error(err)
+					goto forward
+				}
+				ignored, err := isSignalIgnored(pid1, s)
+				if err != nil {
+					log.Error(err)
+					goto forward
+				}
+				if blocked || ignored {
+					sigToForward = os.Signal(syscall.SIGKILL)
+				}
 			}
+
+		forward:
+			if err := p.signal(sigToForward); err != nil {
+				log.Error(err)
+			}
+
+		default:
 
 			//simply forward the signal to the process
 			if err := p.signal(s); err != nil {
@@ -130,4 +156,41 @@ func signalAllDescendants(sig syscall.Signal) error {
 		err = syscall.Kill(ps.Pid, sig)
 	}
 	return err
+}
+
+// tell if given pid blocks the given signal
+func isSignalBlocked(pid int, s os.Signal) (bool, error) {
+	status, err := procStatus(pid)
+	if err != nil {
+		return false, err
+	}
+	return include(status.SigBlk, s), nil
+}
+
+// tell if the given pid ignore the given signal
+func isSignalIgnored(pid int, s os.Signal) (bool, error) {
+	status, err := procStatus(pid)
+	if err != nil {
+		return false, err
+	}
+	return include(status.SigIgn, s), nil
+}
+
+func procStatus(pid int) (*procfs.ProcStatus, error) {
+	p := &procfs.Proc{
+		Pid: pid,
+	}
+	return p.Status()
+}
+
+func include(signals []syscall.Signal, s os.Signal) bool {
+	if sig, ok := s.(syscall.Signal); ok {
+		for _, s := range signals {
+			if s == sig {
+				return true
+			}
+		}
+		return false
+	}
+	return false
 }

@@ -53,27 +53,3 @@ func parsePrefixArg(prefix string) (string, iowire.Color) {
 	}
 	return comps[0], iowire.MapColor(comps[len(comps)-1])
 }
-
-func logHowSignalIsHandled(pid int, s syscall.Signal) {
-	p := &procfs.Proc{
-		Pid: pid,
-	}
-	status, err := p.Status()
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	log.Debugf("is %d blocking signal ? %v", pid, include(status.SigBlk, s))
-	log.Debugf("is %d ignoring signal ? %v", pid, include(status.SigIgn, s))
-	log.Debugf("is %d caughting signal ? %v", pid, include(status.SigCgt, s))
-}
-
-func include(signals []syscall.Signal, sig syscall.Signal) bool {
-	for _, s := range signals {
-		if s == sig {
-			return true
-		}
-	}
-	return false
-}

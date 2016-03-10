@@ -98,7 +98,7 @@ func TestPortBinding(t *testing.T) {
 	port := "9999"
 	name := "dock-test-container"
 
-	if err := d.start(true, "run", "-d", "--name", name, testImage, "dock", "--debug", "--web-hook", serverURL, "--bind-port", port, "python", "-m", "SimpleHTTPServer", port); err != nil {
+	if err := d.start(true, "run", "-d", "--name", name, testImage, "dock", "--debug", "--web-hook", serverURL, "--bind-port", port, "--thug", "python", "-m", "SimpleHTTPServer", port); err != nil {
 		fmt.Println(d.debugInfo())
 		t.Fatal(err)
 	}
@@ -106,13 +106,11 @@ func TestPortBinding(t *testing.T) {
 	defer d.start(false, "rm", name)
 
 	s := <-server.c
-	fmt.Println(s)
 	if s != notifier.StatusStarting {
 		t.Fatalf("expected status %q, got %q", notifier.StatusStarting, s)
 	}
 
 	s = <-server.c
-	fmt.Println(s)
 	if s != notifier.StatusRunning {
 		t.Fatalf("expected status %q, got %q", notifier.StatusRunning, s)
 	}
@@ -121,7 +119,6 @@ func TestPortBinding(t *testing.T) {
 		t.Fatal(err)
 	}
 	s = <-server.c
-	fmt.Println(s)
 	if s != notifier.StatusCrashed {
 		t.Fatalf("expected status %q, got %q", notifier.StatusCrashed, s)
 	}

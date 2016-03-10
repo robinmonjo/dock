@@ -34,6 +34,7 @@ func main() {
 		cli.IntFlag{Name: "log-rotate", Usage: "duration in hour when stdoud should rotate (if `--io` is a file)"},
 		cli.StringFlag{Name: "stdout-prefix", Usage: "add a prefix to stdout lines (format: <prefix>:<color>)"},
 		cli.BoolFlag{Name: "debug, d", Usage: "run with verbose output (for developpers)"},
+		cli.BoolFlag{Name: "thug", Usage: "translate stopping signals in SIGKILL if process ignore or block the signal"},
 	}
 
 	app.Action = func(c *cli.Context) {
@@ -73,6 +74,7 @@ func start(c *cli.Context) (int, error) {
 	defer process.cleanup()
 
 	sh := newSignalsHandler()
+	sh.authority = c.Bool("thug")
 
 	wh := c.String("web-hook")
 	notifier.WebHook = wh

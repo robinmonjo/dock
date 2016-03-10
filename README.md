@@ -81,6 +81,13 @@ If given `--io` is a file, specifying `-log-rotate X` perform a log rotation eve
 
 Add a prefix to stdout lines. Format: `prefix[:<color>]` where color may be white, green, blue, magenta, yellow, cyan or red
 
+#### `--thug`
+
+When you stop a docker container, a SIGTERM is sent to the process running it. The docker daemon then wait for a certain delay and if the container still exists, it will kill the process (using SIGKILL). This happens a lot with process ran as PID 1 inside a linux container, since the [kernel will treat PID 1 specially](http://lwn.net/Articles/532748/). 
+With `dock` this behavior happens less frequently since `dock` runs as PID 1. However some program block or ignore some signals. For example, `sh` ignores the SIGTERM signal. Using `docker stop` on a container running `sh` will force the docker engine to kill the process. This may be frustrating.
+
+The `--thug` flag allows to translate a stopping signal (SIGINT, SIGQUIT, SIGTERM) into a SIGKILL **if** the stopping signal is blocked or ignored by `dock`'s child process
+
 ## Working on `dock`
 
 - use the Makefile and Dockerfile :)
