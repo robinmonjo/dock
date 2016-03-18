@@ -31,6 +31,7 @@ func main() {
 		cli.StringFlag{Name: "io", Usage: "smart stdin / stdout (see README for more info)"},
 		cli.StringFlag{Name: "web-hook", Usage: "hook where process status changes should be notified"},
 		cli.StringFlag{Name: "bind-port", Usage: "port the process is expected to bind"},
+		cli.BoolFlag{Name: "strict-port-binding", Usage: "when bind-port is specified, ensure binding PID is a descendant of dock (see doc for more info)"},
 		cli.IntFlag{Name: "log-rotate", Usage: "duration in hour when stdoud should rotate (if `--io` is a file)"},
 		cli.StringFlag{Name: "stdout-prefix", Usage: "add a prefix to stdout lines (format: <prefix>:<color>)"},
 		cli.BoolFlag{Name: "debug, d", Usage: "run with verbose output (for developpers)"},
@@ -105,7 +106,7 @@ func start(c *cli.Context) (int, error) {
 	go func() {
 		bindPort := c.String("bind-port")
 		if bindPort != "" {
-			waitPortBinding(bindPort)
+			waitPortBinding(bindPort, c.Bool("strict-port-binding"))
 		} else {
 			processStateChanged(notifier.StatusRunning)
 		}
@@ -134,19 +135,24 @@ func processStateChanged(state notifier.PsStatus) {
 	}
 }
 
-func waitPortBinding(watchedPort string) {
+func waitPortBinding(watchedPort string, strictBinding bool) {
 	for {
 		p := procfs.Self()
-		descendants, err := p.Descendants()
-		if err != nil {
-			log.Error(err)
-			break
-		}
+
 		pids := []int{}
-		for _, p := range descendants {
-			pids = append(pids, p.Pid)
+
+		if strictBinding {
+			descendants, err := p.Descendants()
+			if err != nil {
+				log.Error(err)
+				break
+			}
+
+			for _, p := range descendants {
+				pids = append(pids, p.Pid)
+			}
+			log.Debug(pids)
 		}
-		log.Debug(pids)
 
 		binderPid, err := port.IsPortBound(watchedPort, pids)
 		if err != nil {
@@ -155,7 +161,7 @@ func waitPortBinding(watchedPort string) {
 		}
 		log.Debug(binderPid)
 		if binderPid != -1 {
-			log.Debugf("port %s binded by pid %d", watchedPort, binderPid)
+			log.Debugf("port %s binded by pid %d (used strict check: %v)", watchedPort, binderPid, strictBinding)
 			processStateChanged(notifier.StatusRunning)
 			break
 		}

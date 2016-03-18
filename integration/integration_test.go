@@ -98,7 +98,7 @@ func TestPortBinding(t *testing.T) {
 	port := "9999"
 	name := "dock-test-container"
 
-	if err := d.start(true, "run", "-d", "--name", name, testImage, "dock", "--debug", "--web-hook", serverURL, "--bind-port", port, "--thug", "python", "-m", "SimpleHTTPServer", port); err != nil {
+	if err := d.start(true, "run", "-d", "--name", name, testImage, "dock", "--debug", "--web-hook", serverURL, "--bind-port", port, "--strict-port-binding", "--thug", "python", "-m", "SimpleHTTPServer", port); err != nil {
 		fmt.Println(d.debugInfo())
 		t.Fatal(err)
 	}

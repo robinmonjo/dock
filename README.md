@@ -68,11 +68,16 @@ where `<status>` may be: `starting`, `running` or `crashed`. Note that if `--bin
 
 #### `--bind-port`
 
-Port `dock`'s child process is expected to bind. Port may be bound by a descendant of `dock` (not only its direct child). This flag is useful only when the `--web-hook` flag is used.
+Port `dock`'s child process is expected to bind. Port may be bound by any processes in the container. See `--strict-port-binding` for more control.
+
+#### `--strict-port-binding`
+
+If `--bind-port` is specified, this flag will ensure that the process is considered running only if the binder is a descendant process of `dock`. This is not really useful in container environment since dock will have PID 1 (hence any port in the container will be bound by a descendant). Be careful while using this flag (TODO: explain why)
+
 
 #### `--log-rotate`
 
-If given `--io` is a file, specifying `-log-rotate X` perform a log rotation every X hours:
+If given `--io` is a file, specifying `--log-rotate X` perform a log rotation every X hours:
 
 - archive (gzip) the current log file by prepending a timestamp (in the stdout file directory)
 - empty the current log file

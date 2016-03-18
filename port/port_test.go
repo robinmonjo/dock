@@ -34,3 +34,31 @@ func TestIsPortBound(t *testing.T) {
 	}
 	t.Fatal("port never bound :(")
 }
+
+func TestIsPortBoundNonStrict(t *testing.T) {
+	port := "8081"
+	go func() {
+		err := http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	maxTry := 10
+	for i := 0; i < maxTry; i++ {
+		pid, err := IsPortBound(port, []int{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if pid == -1 {
+			continue //port not bound yet
+		}
+		//port bound
+		if pid != 0 {
+			t.Fatal("expect port to be bound by %d, got %d", 0, pid)
+		} else {
+			return // ok
+		}
+	}
+	t.Fatal("port never bound :(")
+}
