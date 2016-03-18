@@ -50,7 +50,8 @@ func (p *process) start() error {
 	if p.wire.Interactive() {
 		go func() {
 			<-p.wire.CloseCh
-			//if interactive and stream closed, send a sigterm to the process
+			//if interactive and wire closed, send a sigterm to the process
+			fmt.Println("sending SIGTERM")
 			p.signal(syscall.SIGTERM)
 		}()
 		return p.startInteractive()

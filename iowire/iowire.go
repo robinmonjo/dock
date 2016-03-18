@@ -2,11 +2,13 @@ package iowire
 
 import (
 	"crypto/tls"
+	"fmt"
 	"io"
 	"net"
 	"net/url"
 	"os"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/docker/docker/pkg/term"
@@ -86,6 +88,20 @@ func NewWire(uri string) (*Wire, error) {
 
 	wire.CloseCh = make(chan bool, 10)
 
+	if wire.isNetworkWire() {
+		go func() {
+			for {
+				fmt.Println("checking")
+				time.Sleep(2 * time.Second)
+				if wire.isRemoteDown() {
+					fmt.Println("wire's down, closing channel")
+					wire.CloseCh <- true
+					return
+				}
+			}
+		}()
+	}
+
 	return wire, nil
 }
 
@@ -146,6 +162,25 @@ func (wire *Wire) Close() {
 		}
 	}
 	wire.CloseCh <- true
+}
+
+func (wire *Wire) isNetworkWire() bool {
+	return wire.URL.Scheme != "" && wire.URL.Scheme != "file"
+}
+
+// when scheme is network based (tcp, tls, udp ...), tell if the remote client is still up
+func (wire *Wire) isRemoteDown() bool {
+	if !wire.isNetworkWire() {
+		return false
+	}
+	if _, err := net.DialTimeout(wire.URL.Scheme, wire.URL.Host+wire.URL.Path, DIAL_TIMEOUT); err != nil {
+		if oerr, ok := err.(*net.OpError); ok {
+			if syserr, ok := oerr.Err.(*os.SyscallError); ok {
+				return syserr.Err == syscall.ECONNREFUSED
+			}
+		}
+	}
+	return false
 }
 
 func MapColor(c string) Color {
