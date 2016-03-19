@@ -5,7 +5,7 @@
 ## Installation
 
 ````bash
-curl -sL https://github.com/robinmonjo/dock/releases/download/v0.7/dock-v0.7.tgz | tar -C /usr/local/bin -zxf -
+curl -sL https://github.com/robinmonjo/dock/releases/download/v0.8/dock-v0.8.tgz | tar -C /usr/local/bin -zxf -
 ````
 
 This will place the latest `dock` binary in `/usr/local/bin`
@@ -54,17 +54,31 @@ Every URL scheme supported by Go's `net.Dial` are supported by `dock`
 
 #### `--web-hook`
 
-If specified, `dock` performs a HTTP PUT request with the JSON payload:
+If specified, `dock` performs a HTTP PUT request with a JSON payload that contains information about the process and its environment:
 
 ````json
 {
   "ps": {
-    "status": "<status>"
+    "status": "running",
+    "net_interfaces": [
+      {
+        "name": "lo",
+        "ipv4": "127.0.0.1",
+        "ipv6": "::1"
+      },
+      {
+        "name":"eth0",
+        "ipv4":"172.17.0.2",
+        "ipv6":"fe80::42:acff:fe11:2"
+      }
+    ]
   }
 }
 ````
 
-where `<status>` may be: `starting`, `running` or `crashed`. Note that if `--bind-port` flag is used, the `running` status is sent only once the given port is bound by one of `dock` children processes
+where `status` may be: `starting`, `running` or `crashed`. Note that if `--bind-port` flag is used, the `running` status is sent only once the given port is bound by one of `dock` children processes.
+
+This payload will evolve to carry more useful information in the future.
 
 #### `--bind-port`
 

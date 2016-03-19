@@ -5,8 +5,11 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 type PsStatus string
@@ -20,7 +23,14 @@ const (
 var WebHook string
 
 type Ps struct {
-	Status PsStatus `json:"status"`
+	Status        PsStatus        `json:"status"`
+	NetInterfaces []*NetInterface `json:"net_interfaces"`
+}
+
+type NetInterface struct {
+	Name string `json:"name"`
+	IPv4 string `json:"ipv4,omitempty"`
+	IPv6 string `json:"ipv6,omitempty"`
 }
 
 type HookPayload struct {
@@ -28,7 +38,12 @@ type HookPayload struct {
 }
 
 func NotifyHook(status PsStatus) error {
-	payload := &HookPayload{&Ps{Status: status}}
+	payload := &HookPayload{
+		&Ps{
+			Status:        status,
+			NetInterfaces: netInterfaces(),
+		},
+	}
 
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -64,4 +79,42 @@ func NotifyHook(status PsStatus) error {
 		return fmt.Errorf("bad status code expected 200 .. 299 got %d", resp.Status)
 	}
 	return nil
+}
+
+func netInterfaces() (netInterfaces []*NetInterface) {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	for _, iface := range ifaces {
+		addrs, err := iface.Addrs()
+		if err != nil {
+			log.Error(err)
+			continue
+		}
+
+		netInterface := &NetInterface{
+			Name: iface.Name,
+		}
+
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+
+			if ip.To4() != nil {
+				netInterface.IPv4 = ip.String()
+			} else {
+				netInterface.IPv6 = ip.String()
+			}
+		}
+		netInterfaces = append(netInterfaces, netInterface)
+	}
+	return
 }
